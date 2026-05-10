@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /home/mint/Downloads/painter/venv/bin/pyside6-uic "$@"

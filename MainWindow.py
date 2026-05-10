@@ -1,0 +1,1350 @@
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'mainwindow.ui'
+##
+## Created by: Qt User Interface Compiler version 6.11.0
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
+from PySide6.QtWidgets import (QApplication, QDockWidget, QFrame, QGridLayout,
+    QHBoxLayout, QLabel, QLayout, QMainWindow,
+    QMenu, QMenuBar, QPushButton, QSizePolicy,
+    QSlider, QSpacerItem, QStatusBar, QToolBar,
+    QToolButton, QVBoxLayout, QWidget)
+import resources_rc
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        if not MainWindow.objectName():
+            MainWindow.setObjectName(u"MainWindow")
+        MainWindow.resize(760, 751)
+        MainWindow.setStyleSheet(u"QPushButton, QToolButton {\n"
+"\n"
+"    border: 1px solid transparent;\n"
+"\n"
+"    border-radius: 4px;\n"
+"\n"
+"}\n"
+"\n"
+"QPushButton:hover, QToolButton:hover {\n"
+"\n"
+"    border-color: #DCDCDC;\n"
+"\n"
+"}\n"
+"\n"
+"QPushButton:checked, QPushButton:pressed,\n"
+"\n"
+"QToolButton:checked, QToolButton:pressed {\n"
+"\n"
+"    background-color: #CCE8FF;\n"
+"\n"
+"    border-color: #3399FF;\n"
+"\n"
+"}\n"
+"\n"
+"#solidBack, #transBack {\n"
+"\n"
+"    margin-left: 6px;\n"
+"\n"
+"    margin-right: 6px;\n"
+"\n"
+"}\n"
+"\n"
+"#primaryButton, #secondaryButton {\n"
+"\n"
+"    border: 1px solid black;\n"
+"\n"
+"}\n"
+"\n"
+"QToolBar { \n"
+"\n"
+"    background: #f8f9fa; \n"
+"\n"
+"    border-bottom: 1px solid #dee2e6;\n"
+"\n"
+"    spacing: 10px;\n"
+"\n"
+"    padding: 4px;\n"
+"\n"
+"}\n"
+"\n"
+"QToolBar QLabel {\n"
+"\n"
+"    font-weight: bold;\n"
+"\n"
+"    color: #495057;\n"
+"\n"
+"}\n"
+"\n"
+"#lineToolbar QToolButton {\n"
+"\n"
+"    font-size: 16px;\n"
+"\n"
+"    padding: 4px 8px;\n"
+"\n"
+"    min-width: 32px;\n"
+"\n"
+"}")
+        self.actionCopy = QAction(MainWindow)
+        self.actionCopy.setObjectName(u"actionCopy")
+        self.actionClearImage = QAction(MainWindow)
+        self.actionClearImage.setObjectName(u"actionClearImage")
+        self.actionZoomIn = QAction(MainWindow)
+        self.actionZoomIn.setObjectName(u"actionZoomIn")
+        icon = QIcon()
+        icon.addFile(u":/icons/magnifier-zoom-in-icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.actionZoomIn.setIcon(icon)
+        self.actionZoomOut = QAction(MainWindow)
+        self.actionZoomOut.setObjectName(u"actionZoomOut")
+        icon1 = QIcon()
+        icon1.addFile(u":/icons/magnifier-zoom-out-icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.actionZoomOut.setIcon(icon1)
+        self.actionOpenImage = QAction(MainWindow)
+        self.actionOpenImage.setObjectName(u"actionOpenImage")
+        self.actionInvertColors = QAction(MainWindow)
+        self.actionInvertColors.setObjectName(u"actionInvertColors")
+        self.actionFlipHorizontal = QAction(MainWindow)
+        self.actionFlipHorizontal.setObjectName(u"actionFlipHorizontal")
+        self.actionFlipVertical = QAction(MainWindow)
+        self.actionFlipVertical.setObjectName(u"actionFlipVertical")
+        self.actionNewImage = QAction(MainWindow)
+        self.actionNewImage.setObjectName(u"actionNewImage")
+        icon2 = QIcon()
+        icon2.addFile(u":/icons/newdocument.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionNewImage.setIcon(icon2)
+        self.actionBold = QAction(MainWindow)
+        self.actionBold.setObjectName(u"actionBold")
+        self.actionBold.setCheckable(True)
+        icon3 = QIcon()
+        icon3.addFile(u":/icons/edit-bold.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionBold.setIcon(icon3)
+        self.actionItalic = QAction(MainWindow)
+        self.actionItalic.setObjectName(u"actionItalic")
+        self.actionItalic.setCheckable(True)
+        icon4 = QIcon()
+        icon4.addFile(u":/icons/edit-italic.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionItalic.setIcon(icon4)
+        self.actionUnderline = QAction(MainWindow)
+        self.actionUnderline.setObjectName(u"actionUnderline")
+        self.actionUnderline.setCheckable(True)
+        icon5 = QIcon()
+        icon5.addFile(u":/icons/edit-underline.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionUnderline.setIcon(icon5)
+        self.actionFillShapes = QAction(MainWindow)
+        self.actionFillShapes.setObjectName(u"actionFillShapes")
+        self.actionFillShapes.setCheckable(True)
+        icon6 = QIcon()
+        icon6.addFile(u":/icons/contour-filled.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionFillShapes.setIcon(icon6)
+        self.actionUndo = QAction(MainWindow)
+        self.actionUndo.setObjectName(u"actionUndo")
+        self.actionRedo = QAction(MainWindow)
+        self.actionRedo.setObjectName(u"actionRedo")
+        self.actionCut = QAction(MainWindow)
+        self.actionCut.setObjectName(u"actionCut")
+        self.actionPaste = QAction(MainWindow)
+        self.actionPaste.setObjectName(u"actionPaste")
+        self.actionPasteAsNew = QAction(MainWindow)
+        self.actionPasteAsNew.setObjectName(u"actionPasteAsNew")
+        self.actionSelectAll = QAction(MainWindow)
+        self.actionSelectAll.setObjectName(u"actionSelectAll")
+        self.actionDeselect = QAction(MainWindow)
+        self.actionDeselect.setObjectName(u"actionDeselect")
+        self.actionContour = QAction(MainWindow)
+        self.actionContour.setObjectName(u"actionContour")
+        self.actionContour.setCheckable(True)
+        icon7 = QIcon()
+        icon7.addFile(u":/icons/contour.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionContour.setIcon(icon7)
+        self.actionOnlyFill = QAction(MainWindow)
+        self.actionOnlyFill.setObjectName(u"actionOnlyFill")
+        self.actionOnlyFill.setCheckable(True)
+        icon8 = QIcon()
+        icon8.addFile(u":/icons/no-contour.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionOnlyFill.setIcon(icon8)
+        self.actionSave = QAction(MainWindow)
+        self.actionSave.setObjectName(u"actionSave")
+        icon9 = QIcon()
+        icon9.addFile(u":/icons/disk.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSave.setIcon(icon9)
+        self.actionExit = QAction(MainWindow)
+        self.actionExit.setObjectName(u"actionExit")
+        self.actionSaveAs = QAction(MainWindow)
+        self.actionSaveAs.setObjectName(u"actionSaveAs")
+        self.actionSaveAs.setIcon(icon9)
+        self.actionRect = QAction(MainWindow)
+        self.actionRect.setObjectName(u"actionRect")
+        self.actionRect.setCheckable(True)
+        icon10 = QIcon()
+        icon10.addFile(u":/icons/blue-rect.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionRect.setIcon(icon10)
+        self.actionEllipse = QAction(MainWindow)
+        self.actionEllipse.setObjectName(u"actionEllipse")
+        self.actionEllipse.setCheckable(True)
+        icon11 = QIcon()
+        icon11.addFile(u":/icons/blue-ellipse.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionEllipse.setIcon(icon11)
+        self.actionRoundRect = QAction(MainWindow)
+        self.actionRoundRect.setObjectName(u"actionRoundRect")
+        self.actionRoundRect.setCheckable(True)
+        icon12 = QIcon()
+        icon12.addFile(u":/icons/blue-roundrect.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionRoundRect.setIcon(icon12)
+        self.actionPolygon = QAction(MainWindow)
+        self.actionPolygon.setObjectName(u"actionPolygon")
+        self.actionPolygon.setCheckable(True)
+        icon13 = QIcon()
+        icon13.addFile(u":/icons/blue-poly.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionPolygon.setIcon(icon13)
+        self.actionRegularPoly = QAction(MainWindow)
+        self.actionRegularPoly.setObjectName(u"actionRegularPoly")
+        self.actionRegularPoly.setCheckable(True)
+        icon14 = QIcon()
+        icon14.addFile(u":/icons/regular-poly.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionRegularPoly.setIcon(icon14)
+        self.actionSpline = QAction(MainWindow)
+        self.actionSpline.setObjectName(u"actionSpline")
+        self.actionSpline.setCheckable(True)
+        icon15 = QIcon()
+        icon15.addFile(u":/icons/blue-curve.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSpline.setIcon(icon15)
+        self.actionLine = QAction(MainWindow)
+        self.actionLine.setObjectName(u"actionLine")
+        self.actionLine.setCheckable(True)
+        icon16 = QIcon()
+        icon16.addFile(u":/icons/blue-line.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionLine.setIcon(icon16)
+        self.actionPolyline = QAction(MainWindow)
+        self.actionPolyline.setObjectName(u"actionPolyline")
+        self.actionPolyline.setCheckable(True)
+        icon17 = QIcon()
+        icon17.addFile(u":/icons/blue-polyline.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionPolyline.setIcon(icon17)
+        self.actionSelectPoly = QAction(MainWindow)
+        self.actionSelectPoly.setObjectName(u"actionSelectPoly")
+        self.actionSelectPoly.setCheckable(True)
+        icon18 = QIcon()
+        icon18.addFile(u":/icons/select-poly.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSelectPoly.setIcon(icon18)
+        self.actionSelectFree = QAction(MainWindow)
+        self.actionSelectFree.setObjectName(u"actionSelectFree")
+        self.actionSelectFree.setCheckable(True)
+        icon19 = QIcon()
+        icon19.addFile(u":/icons/select-free.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSelectFree.setIcon(icon19)
+        self.actionSelectWand = QAction(MainWindow)
+        self.actionSelectWand.setObjectName(u"actionSelectWand")
+        self.actionSelectWand.setCheckable(True)
+        icon20 = QIcon()
+        icon20.addFile(u":/icons/magic-wand.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSelectWand.setIcon(icon20)
+        self.actionSelectRect = QAction(MainWindow)
+        self.actionSelectRect.setObjectName(u"actionSelectRect")
+        self.actionSelectRect.setCheckable(True)
+        icon21 = QIcon()
+        icon21.addFile(u":/icons/sel.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSelectRect.setIcon(icon21)
+        self.actionSelectEllipse = QAction(MainWindow)
+        self.actionSelectEllipse.setObjectName(u"actionSelectEllipse")
+        self.actionSelectEllipse.setCheckable(True)
+        icon22 = QIcon()
+        icon22.addFile(u":/icons/sel-ellipse.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSelectEllipse.setIcon(icon22)
+        self.actionNoZoom = QAction(MainWindow)
+        self.actionNoZoom.setObjectName(u"actionNoZoom")
+        icon23 = QIcon()
+        icon23.addFile(u":/icons/1to1-png.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.actionNoZoom.setIcon(icon23)
+        self.actionRotateRight = QAction(MainWindow)
+        self.actionRotateRight.setObjectName(u"actionRotateRight")
+        self.actionResize = QAction(MainWindow)
+        self.actionResize.setObjectName(u"actionResize")
+        self.actionInvertSelection = QAction(MainWindow)
+        self.actionInvertSelection.setObjectName(u"actionInvertSelection")
+        self.actionSimpleLine = QAction(MainWindow)
+        self.actionSimpleLine.setObjectName(u"actionSimpleLine")
+        self.actionSimpleLine.setCheckable(True)
+        icon24 = QIcon()
+        icon24.addFile(u":/icons/simple-line.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionSimpleLine.setIcon(icon24)
+        self.actionShowToolProperties = QAction(MainWindow)
+        self.actionShowToolProperties.setObjectName(u"actionShowToolProperties")
+        self.actionShowToolProperties.setCheckable(True)
+        self.actionShowToolProperties.setChecked(False)
+        self.centralWidget = QWidget(MainWindow)
+        self.centralWidget.setObjectName(u"centralWidget")
+        palette = QPalette()
+        brush = QBrush(QColor(255, 255, 255, 255))
+        brush.setStyle(Qt.BrushStyle.SolidPattern)
+        palette.setBrush(QPalette.ColorGroup.Active, QPalette.ColorRole.Base, brush)
+        brush1 = QBrush(QColor(136, 136, 136, 255))
+        brush1.setStyle(Qt.BrushStyle.SolidPattern)
+        palette.setBrush(QPalette.ColorGroup.Active, QPalette.ColorRole.Window, brush1)
+        palette.setBrush(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Base, brush)
+        palette.setBrush(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, brush1)
+        palette.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, brush1)
+        palette.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Window, brush1)
+        self.centralWidget.setPalette(palette)
+        self.centralWidget.setLayoutDirection(Qt.LeftToRight)
+        self.centralWidget.setAutoFillBackground(True)
+        self.centralWidget.setStyleSheet(u"")
+        self.verticalLayoutC = QVBoxLayout(self.centralWidget)
+        self.verticalLayoutC.setSpacing(6)
+        self.verticalLayoutC.setContentsMargins(11, 11, 11, 11)
+        self.verticalLayoutC.setObjectName(u"verticalLayoutC")
+        self.verticalLayoutC.setContentsMargins(0, 0, 0, 0)
+        self.canvas = QLabel(self.centralWidget)
+        self.canvas.setObjectName(u"canvas")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(self.canvas.sizePolicy().hasHeightForWidth())
+        self.canvas.setSizePolicy(sizePolicy)
+        self.canvas.setMinimumSize(QSize(28, 28))
+        self.canvas.setMaximumSize(QSize(28, 28))
+        self.canvas.setStyleSheet(u"")
+        self.canvas.setFrameShape(QFrame.NoFrame)
+        self.canvas.setLineWidth(4)
+        self.canvas.setMargin(0)
+
+        self.verticalLayoutC.addWidget(self.canvas)
+
+        MainWindow.setCentralWidget(self.centralWidget)
+        self.toolsDock = QDockWidget(MainWindow)
+        self.toolsDock.setObjectName(u"toolsDock")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.toolsDock.sizePolicy().hasHeightForWidth())
+        self.toolsDock.setSizePolicy(sizePolicy1)
+        self.toolsDock.setMinimumSize(QSize(72, 584))
+        self.toolsDock.setMaximumSize(QSize(72, 524287))
+        self.toolsDock.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable)
+        self.toolsDock.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.verticalLayout_dock = QVBoxLayout(self.dockWidgetContents)
+        self.verticalLayout_dock.setSpacing(0)
+        self.verticalLayout_dock.setContentsMargins(11, 11, 11, 11)
+        self.verticalLayout_dock.setObjectName(u"verticalLayout_dock")
+        self.verticalLayout_dock.setContentsMargins(0, 0, 0, 0)
+        self.widget = QWidget(self.dockWidgetContents)
+        self.widget.setObjectName(u"widget")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
+        self.widget.setSizePolicy(sizePolicy2)
+        self.widget.setMaximumSize(QSize(84, 400))
+        self.gridLayout = QGridLayout(self.widget)
+        self.gridLayout.setSpacing(6)
+        self.gridLayout.setContentsMargins(11, 11, 11, 11)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setHorizontalSpacing(2)
+        self.gridLayout.setVerticalSpacing(4)
+        self.gridLayout.setContentsMargins(8, 4, 0, 0)
+        self.simplelineButton = QPushButton(self.widget)
+        self.simplelineButton.setObjectName(u"simplelineButton")
+        self.simplelineButton.setMinimumSize(QSize(28, 28))
+        self.simplelineButton.setIcon(icon24)
+        self.simplelineButton.setCheckable(True)
+        self.simplelineButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.simplelineButton, 8, 0, 1, 1)
+
+        self.regularpolyButton = QPushButton(self.widget)
+        self.regularpolyButton.setObjectName(u"regularpolyButton")
+        self.regularpolyButton.setMinimumSize(QSize(28, 28))
+        self.regularpolyButton.setIcon(icon14)
+        self.regularpolyButton.setCheckable(True)
+        self.regularpolyButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.regularpolyButton, 11, 1, 1, 1)
+
+        self.shapeToolButton = QToolButton(self.widget)
+        self.shapeToolButton.setObjectName(u"shapeToolButton")
+        self.shapeToolButton.setMinimumSize(QSize(28, 28))
+        self.shapeToolButton.setVisible(False)
+        self.shapeToolButton.setIcon(icon10)
+        self.shapeToolButton.setCheckable(True)
+
+        self.gridLayout.addWidget(self.shapeToolButton, 16, 0, 1, 1)
+
+        self.polylineButton = QPushButton(self.widget)
+        self.polylineButton.setObjectName(u"polylineButton")
+        self.polylineButton.setMinimumSize(QSize(28, 0))
+        self.polylineButton.setMaximumSize(QSize(28, 0))
+        self.polylineButton.setIcon(icon17)
+        self.polylineButton.setCheckable(True)
+        self.polylineButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.polylineButton, 12, 1, 1, 1)
+
+        self.lineToolButton = QToolButton(self.widget)
+        self.lineToolButton.setObjectName(u"lineToolButton")
+        self.lineToolButton.setMinimumSize(QSize(28, 28))
+        self.lineToolButton.setVisible(False)
+        self.lineToolButton.setIcon(icon24)
+        self.lineToolButton.setCheckable(True)
+
+        self.gridLayout.addWidget(self.lineToolButton, 16, 1, 1, 1)
+
+        self.roundrectButton = QPushButton(self.widget)
+        self.roundrectButton.setObjectName(u"roundrectButton")
+        self.roundrectButton.setMinimumSize(QSize(28, 28))
+        self.roundrectButton.setIcon(icon12)
+        self.roundrectButton.setCheckable(True)
+        self.roundrectButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.roundrectButton, 10, 1, 1, 1)
+
+        self.splineButton = QPushButton(self.widget)
+        self.splineButton.setObjectName(u"splineButton")
+        self.splineButton.setMinimumSize(QSize(28, 28))
+        self.splineButton.setIcon(icon15)
+        self.splineButton.setCheckable(True)
+        self.splineButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.splineButton, 8, 1, 1, 1)
+
+        self.fillButton = QPushButton(self.widget)
+        self.fillButton.setObjectName(u"fillButton")
+        self.fillButton.setMinimumSize(QSize(28, 28))
+        icon25 = QIcon()
+        icon25.addFile(u":/icons/paint-can.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.fillButton.setIcon(icon25)
+        self.fillButton.setCheckable(True)
+        self.fillButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.fillButton, 1, 1, 1, 1)
+
+        self.eraserButton = QPushButton(self.widget)
+        self.eraserButton.setObjectName(u"eraserButton")
+        self.eraserButton.setMinimumSize(QSize(28, 28))
+        icon26 = QIcon()
+        icon26.addFile(u":/icons/eraser.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.eraserButton.setIcon(icon26)
+        self.eraserButton.setCheckable(True)
+        self.eraserButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.eraserButton, 1, 0, 1, 1)
+
+        self.penButton = QPushButton(self.widget)
+        self.penButton.setObjectName(u"penButton")
+        self.penButton.setMinimumSize(QSize(28, 28))
+        icon27 = QIcon()
+        icon27.addFile(u":/icons/pencil.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.penButton.setIcon(icon27)
+        self.penButton.setCheckable(True)
+        self.penButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.penButton, 4, 1, 1, 1)
+
+        self.moveButton = QPushButton(self.widget)
+        self.moveButton.setObjectName(u"moveButton")
+        self.moveButton.setMinimumSize(QSize(28, 28))
+        self.moveButton.setMaximumSize(QSize(28, 16777215))
+        icon28 = QIcon()
+        icon28.addFile(u":/icons/move.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.moveButton.setIcon(icon28)
+        self.moveButton.setIconSize(QSize(24, 24))
+        self.moveButton.setCheckable(True)
+        self.moveButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.moveButton, 0, 0, 1, 1)
+
+        self.selectToolButton = QToolButton(self.widget)
+        self.selectToolButton.setObjectName(u"selectToolButton")
+        self.selectToolButton.setMinimumSize(QSize(28, 28))
+        self.selectToolButton.setIcon(icon21)
+        self.selectToolButton.setCheckable(True)
+
+        self.gridLayout.addWidget(self.selectToolButton, 0, 1, 1, 1)
+
+        self.magnifierButton = QPushButton(self.widget)
+        self.magnifierButton.setObjectName(u"magnifierButton")
+        self.magnifierButton.setMinimumSize(QSize(28, 28))
+        icon29 = QIcon()
+        icon29.addFile(u":/icons/magnifier-zoom.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.magnifierButton.setIcon(icon29)
+        self.magnifierButton.setCheckable(True)
+        self.magnifierButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.magnifierButton, 2, 1, 1, 1)
+
+        self.dropperButton = QPushButton(self.widget)
+        self.dropperButton.setObjectName(u"dropperButton")
+        self.dropperButton.setMinimumSize(QSize(28, 28))
+        icon30 = QIcon()
+        icon30.addFile(u":/icons/pipette.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dropperButton.setIcon(icon30)
+        self.dropperButton.setCheckable(True)
+        self.dropperButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.dropperButton, 2, 0, 1, 1)
+
+        self.textButton = QPushButton(self.widget)
+        self.textButton.setObjectName(u"textButton")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy3.setHorizontalStretch(36)
+        sizePolicy3.setVerticalStretch(36)
+        sizePolicy3.setHeightForWidth(self.textButton.sizePolicy().hasHeightForWidth())
+        self.textButton.setSizePolicy(sizePolicy3)
+        self.textButton.setMinimumSize(QSize(28, 28))
+        icon31 = QIcon()
+        icon31.addFile(u":/icons/edit.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.textButton.setIcon(icon31)
+        self.textButton.setIconSize(QSize(24, 24))
+        self.textButton.setCheckable(True)
+        self.textButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.textButton, 6, 1, 1, 1)
+
+        self.brushButton = QPushButton(self.widget)
+        self.brushButton.setObjectName(u"brushButton")
+        self.brushButton.setMinimumSize(QSize(28, 28))
+        icon32 = QIcon()
+        icon32.addFile(u":/icons/paint-brush.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.brushButton.setIcon(icon32)
+        self.brushButton.setCheckable(True)
+        self.brushButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.brushButton, 4, 0, 1, 1)
+
+        self.stampButton = QPushButton(self.widget)
+        self.stampButton.setObjectName(u"stampButton")
+        self.stampButton.setMinimumSize(QSize(36, 36))
+        self.stampButton.setMaximumSize(QSize(36, 36))
+        self.stampButton.setVisible(False)
+        self.stampButton.setStyleSheet(u"")
+        icon33 = QIcon()
+        icon33.addFile(u":/icons/stamp.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.stampButton.setIcon(icon33)
+        self.stampButton.setCheckable(True)
+
+        self.gridLayout.addWidget(self.stampButton, 15, 1, 1, 1)
+
+        self.markerButton = QPushButton(self.widget)
+        self.markerButton.setObjectName(u"markerButton")
+        self.markerButton.setMinimumSize(QSize(28, 28))
+        icon34 = QIcon()
+        icon34.addFile(u":/icons/marker.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.markerButton.setIcon(icon34)
+        self.markerButton.setCheckable(True)
+        self.markerButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.markerButton, 6, 0, 1, 1)
+
+        self.rectButton = QPushButton(self.widget)
+        self.rectButton.setObjectName(u"rectButton")
+        self.rectButton.setMinimumSize(QSize(28, 28))
+        self.rectButton.setIcon(icon10)
+        self.rectButton.setCheckable(True)
+        self.rectButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.rectButton, 9, 1, 1, 1)
+
+        self.ellipseButton = QPushButton(self.widget)
+        self.ellipseButton.setObjectName(u"ellipseButton")
+        self.ellipseButton.setMinimumSize(QSize(28, 28))
+        self.ellipseButton.setIcon(icon11)
+        self.ellipseButton.setCheckable(True)
+        self.ellipseButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.ellipseButton, 9, 0, 1, 1)
+
+        self.polygonButton = QPushButton(self.widget)
+        self.polygonButton.setObjectName(u"polygonButton")
+        self.polygonButton.setMinimumSize(QSize(28, 28))
+        self.polygonButton.setIcon(icon13)
+        self.polygonButton.setCheckable(True)
+        self.polygonButton.setFlat(True)
+
+        self.gridLayout.addWidget(self.polygonButton, 10, 0, 1, 1)
+
+
+        self.verticalLayout_dock.addWidget(self.widget)
+
+        self.backgroundContainer = QWidget(self.dockWidgetContents)
+        self.backgroundContainer.setObjectName(u"backgroundContainer")
+        self.backgroundContainer.setMaximumSize(QSize(100, 16777215))
+        self.backLayout = QVBoxLayout(self.backgroundContainer)
+        self.backLayout.setSpacing(0)
+        self.backLayout.setContentsMargins(11, 11, 11, 11)
+        self.backLayout.setObjectName(u"backLayout")
+        self.backLayout.setContentsMargins(4, 0, 0, 0)
+        self.verticalSpacer_4 = QSpacerItem(20, 4, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.backLayout.addItem(self.verticalSpacer_4)
+
+        self.label = QLabel(self.backgroundContainer)
+        self.label.setObjectName(u"label")
+        self.label.setAlignment(Qt.AlignCenter)
+
+        self.backLayout.addWidget(self.label)
+
+        self.strokesize = QSlider(self.backgroundContainer)
+        self.strokesize.setObjectName(u"strokesize")
+        self.strokesize.setMaximumSize(QSize(78, 16777215))
+        self.strokesize.setOrientation(Qt.Horizontal)
+
+        self.backLayout.addWidget(self.strokesize)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 12, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.backLayout.addItem(self.verticalSpacer_2)
+
+        self.transFrame = QFrame(self.backgroundContainer)
+        self.transFrame.setObjectName(u"transFrame")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.transFrame.sizePolicy().hasHeightForWidth())
+        self.transFrame.setSizePolicy(sizePolicy4)
+        self.transFrame.setMinimumSize(QSize(68, 0))
+        self.transFrame.setMaximumSize(QSize(68, 16777215))
+        self.transFrame.setVisible(True)
+        self.transFrame.setFrameShape(QFrame.Panel)
+        self.transFrame.setFrameShadow(QFrame.Sunken)
+        self.transFrame.setLineWidth(1)
+        self.verticalLayout_trans = QVBoxLayout(self.transFrame)
+        self.verticalLayout_trans.setSpacing(0)
+        self.verticalLayout_trans.setContentsMargins(11, 11, 11, 11)
+        self.verticalLayout_trans.setObjectName(u"verticalLayout_trans")
+        self.verticalLayout_trans.setContentsMargins(0, 0, 0, 0)
+        self.solidBack = QPushButton(self.transFrame)
+        self.solidBack.setObjectName(u"solidBack")
+        self.solidBack.setMinimumSize(QSize(64, 56))
+        self.solidBack.setMaximumSize(QSize(64, 56))
+        self.solidBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
+        icon35 = QIcon()
+        icon35.addFile(u":/icons/solidbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.solidBack.setIcon(icon35)
+        self.solidBack.setIconSize(QSize(44, 32))
+        self.solidBack.setCheckable(True)
+
+        self.verticalLayout_trans.addWidget(self.solidBack, 0, Qt.AlignHCenter)
+
+        self.verticalSpacer_3 = QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.verticalLayout_trans.addItem(self.verticalSpacer_3)
+
+        self.transBack = QPushButton(self.transFrame)
+        self.transBack.setObjectName(u"transBack")
+        sizePolicy4.setHeightForWidth(self.transBack.sizePolicy().hasHeightForWidth())
+        self.transBack.setSizePolicy(sizePolicy4)
+        self.transBack.setMinimumSize(QSize(64, 56))
+        self.transBack.setMaximumSize(QSize(64, 56))
+        self.transBack.setSizeIncrement(QSize(0, 0))
+        self.transBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
+        icon36 = QIcon()
+        icon36.addFile(u":/icons/transbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.transBack.setIcon(icon36)
+        self.transBack.setIconSize(QSize(44, 32))
+        self.transBack.setCheckable(True)
+        self.transBack.setChecked(True)
+
+        self.verticalLayout_trans.addWidget(self.transBack)
+
+
+        self.backLayout.addWidget(self.transFrame)
+
+        self.verticalSpacer = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.backLayout.addItem(self.verticalSpacer)
+
+        self.fillingModes = QFrame(self.backgroundContainer)
+        self.fillingModes.setObjectName(u"fillingModes")
+        self.fillingModes.setMinimumSize(QSize(68, 0))
+        self.fillingModes.setMaximumSize(QSize(68, 16777215))
+        self.fillingModes.setStyleSheet(u"")
+        self.fillingModes.setFrameShape(QFrame.Panel)
+        self.fillingModes.setFrameShadow(QFrame.Sunken)
+        self.verticalLayout_6 = QVBoxLayout(self.fillingModes)
+        self.verticalLayout_6.setSpacing(0)
+        self.verticalLayout_6.setContentsMargins(11, 11, 11, 11)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.contourButton = QPushButton(self.fillingModes)
+        self.contourButton.setObjectName(u"contourButton")
+        sizePolicy4.setHeightForWidth(self.contourButton.sizePolicy().hasHeightForWidth())
+        self.contourButton.setSizePolicy(sizePolicy4)
+        self.contourButton.setMinimumSize(QSize(64, 32))
+        self.contourButton.setMaximumSize(QSize(64, 32))
+        self.contourButton.setLayoutDirection(Qt.LeftToRight)
+        self.contourButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
+        icon37 = QIcon()
+        icon37.addFile(u":/icons/contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.contourButton.setIcon(icon37)
+        self.contourButton.setIconSize(QSize(64, 16))
+        self.contourButton.setCheckable(True)
+        self.contourButton.setChecked(True)
+
+        self.verticalLayout_6.addWidget(self.contourButton)
+
+        self.fillShapesButton = QPushButton(self.fillingModes)
+        self.fillShapesButton.setObjectName(u"fillShapesButton")
+        sizePolicy4.setHeightForWidth(self.fillShapesButton.sizePolicy().hasHeightForWidth())
+        self.fillShapesButton.setSizePolicy(sizePolicy4)
+        self.fillShapesButton.setMinimumSize(QSize(64, 32))
+        self.fillShapesButton.setMaximumSize(QSize(64, 32))
+        self.fillShapesButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
+        icon38 = QIcon()
+        icon38.addFile(u":/icons/contour-filled1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.fillShapesButton.setIcon(icon38)
+        self.fillShapesButton.setIconSize(QSize(64, 16))
+        self.fillShapesButton.setCheckable(True)
+
+        self.verticalLayout_6.addWidget(self.fillShapesButton)
+
+        self.onlyFillButton = QPushButton(self.fillingModes)
+        self.onlyFillButton.setObjectName(u"onlyFillButton")
+        sizePolicy4.setHeightForWidth(self.onlyFillButton.sizePolicy().hasHeightForWidth())
+        self.onlyFillButton.setSizePolicy(sizePolicy4)
+        self.onlyFillButton.setMinimumSize(QSize(64, 32))
+        self.onlyFillButton.setMaximumSize(QSize(64, 32))
+        self.onlyFillButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
+        icon39 = QIcon()
+        icon39.addFile(u":/icons/no-contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.onlyFillButton.setIcon(icon39)
+        self.onlyFillButton.setIconSize(QSize(64, 16))
+        self.onlyFillButton.setCheckable(True)
+
+        self.verticalLayout_6.addWidget(self.onlyFillButton)
+
+
+        self.backLayout.addWidget(self.fillingModes)
+
+        self.verticalSpacer1 = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.backLayout.addItem(self.verticalSpacer1)
+
+
+        self.verticalLayout_dock.addWidget(self.backgroundContainer)
+
+        self.verticalSpacer_dock = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_dock.addItem(self.verticalSpacer_dock)
+
+        self.toolsDock.setWidget(self.dockWidgetContents)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.toolsDock)
+        self.paletteDock = QDockWidget(MainWindow)
+        self.paletteDock.setObjectName(u"paletteDock")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.paletteDock.sizePolicy().hasHeightForWidth())
+        self.paletteDock.setSizePolicy(sizePolicy5)
+        self.paletteDock.setMinimumSize(QSize(681, 74))
+        self.paletteDock.setAutoFillBackground(True)
+        self.paletteDock.setStyleSheet(u"")
+        self.paletteDock.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable|QDockWidget.DockWidgetVerticalTitleBar)
+        self.paletteDock.setAllowedAreas(Qt.BottomDockWidgetArea|Qt.TopDockWidgetArea)
+        self.paletteDockContents = QWidget()
+        self.paletteDockContents.setObjectName(u"paletteDockContents")
+        sizePolicy5.setHeightForWidth(self.paletteDockContents.sizePolicy().hasHeightForWidth())
+        self.paletteDockContents.setSizePolicy(sizePolicy5)
+        self.horizontalLayout_palette = QHBoxLayout(self.paletteDockContents)
+        self.horizontalLayout_palette.setSpacing(0)
+        self.horizontalLayout_palette.setContentsMargins(11, 11, 11, 11)
+        self.horizontalLayout_palette.setObjectName(u"horizontalLayout_palette")
+        self.horizontalLayout_palette.setSizeConstraint(QLayout.SetFixedSize)
+        self.horizontalLayout_palette.setContentsMargins(0, 0, 0, 2)
+        self.widget_colors_sel = QWidget(self.paletteDockContents)
+        self.widget_colors_sel.setObjectName(u"widget_colors_sel")
+        self.widget_colors_sel.setMaximumSize(QSize(90, 68))
+        self.colorGridLayout = QGridLayout(self.widget_colors_sel)
+        self.colorGridLayout.setSpacing(6)
+        self.colorGridLayout.setContentsMargins(11, 11, 11, 11)
+        self.colorGridLayout.setObjectName(u"colorGridLayout")
+        self.colorGridLayout.setHorizontalSpacing(2)
+        self.colorGridLayout.setVerticalSpacing(7)
+        self.colorGridLayout.setContentsMargins(15, 0, 10, 0)
+        self.switchColors = QPushButton(self.widget_colors_sel)
+        self.switchColors.setObjectName(u"switchColors")
+        self.switchColors.setMinimumSize(QSize(18, 18))
+        self.switchColors.setMaximumSize(QSize(18, 18))
+        icon40 = QIcon()
+        icon40.addFile(u":/icons/switch.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.switchColors.setIcon(icon40)
+        self.switchColors.setFlat(True)
+
+        self.colorGridLayout.addWidget(self.switchColors, 0, 3, 1, 1)
+
+        self.bnButton = QPushButton(self.widget_colors_sel)
+        self.bnButton.setObjectName(u"bnButton")
+        icon41 = QIcon()
+        icon41.addFile(u":/icons/bn.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bnButton.setIcon(icon41)
+
+        self.colorGridLayout.addWidget(self.bnButton, 2, 0, 1, 1)
+
+        self.secondaryButton = QPushButton(self.widget_colors_sel)
+        self.secondaryButton.setObjectName(u"secondaryButton")
+        self.secondaryButton.setMinimumSize(QSize(42, 42))
+        self.secondaryButton.setMaximumSize(QSize(42, 42))
+        self.secondaryButton.setStyleSheet(u"border: 1px solid #888!important; background-color: white;")
+
+        self.colorGridLayout.addWidget(self.secondaryButton, 1, 1, 1, 1)
+
+        self.primaryButton = QPushButton(self.widget_colors_sel)
+        self.primaryButton.setObjectName(u"primaryButton")
+        self.primaryButton.setMinimumSize(QSize(42, 42))
+        self.primaryButton.setMaximumSize(QSize(42, 42))
+        self.primaryButton.setStyleSheet(u"border: 1px solid #888!important; background-color: white;")
+
+        self.colorGridLayout.addWidget(self.primaryButton, 0, 0, 1, 1)
+
+
+        self.horizontalLayout_palette.addWidget(self.widget_colors_sel)
+
+        self.widget_palette_grid = QWidget(self.paletteDockContents)
+        self.widget_palette_grid.setObjectName(u"widget_palette_grid")
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.widget_palette_grid.sizePolicy().hasHeightForWidth())
+        self.widget_palette_grid.setSizePolicy(sizePolicy6)
+        self.widget_palette_grid.setMaximumSize(QSize(16777215, 65))
+        self.gridLayout_2 = QGridLayout(self.widget_palette_grid)
+        self.gridLayout_2.setSpacing(6)
+        self.gridLayout_2.setContentsMargins(11, 11, 11, 11)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setHorizontalSpacing(4)
+        self.gridLayout_2.setVerticalSpacing(0)
+        self.gridLayout_2.setContentsMargins(15, 0, 15, 0)
+        self.colorButton_16 = QPushButton(self.widget_palette_grid)
+        self.colorButton_16.setObjectName(u"colorButton_16")
+        self.colorButton_16.setMinimumSize(QSize(28, 28))
+        self.colorButton_16.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_16, 1, 1, 1, 1)
+
+        self.colorButton_18 = QPushButton(self.widget_palette_grid)
+        self.colorButton_18.setObjectName(u"colorButton_18")
+        self.colorButton_18.setMinimumSize(QSize(28, 28))
+        self.colorButton_18.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_18, 1, 3, 1, 1)
+
+        self.colorButton_17 = QPushButton(self.widget_palette_grid)
+        self.colorButton_17.setObjectName(u"colorButton_17")
+        self.colorButton_17.setMinimumSize(QSize(28, 28))
+        self.colorButton_17.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_17, 1, 2, 1, 1)
+
+        self.colorButton_15 = QPushButton(self.widget_palette_grid)
+        self.colorButton_15.setObjectName(u"colorButton_15")
+        self.colorButton_15.setMinimumSize(QSize(28, 28))
+        self.colorButton_15.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_15, 1, 0, 1, 1)
+
+        self.colorButton_1 = QPushButton(self.widget_palette_grid)
+        self.colorButton_1.setObjectName(u"colorButton_1")
+        self.colorButton_1.setMinimumSize(QSize(28, 28))
+        self.colorButton_1.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_1, 0, 0, 1, 1)
+
+        self.colorButton_2 = QPushButton(self.widget_palette_grid)
+        self.colorButton_2.setObjectName(u"colorButton_2")
+        self.colorButton_2.setMinimumSize(QSize(28, 28))
+        self.colorButton_2.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_2, 0, 1, 1, 1)
+
+        self.colorButton_3 = QPushButton(self.widget_palette_grid)
+        self.colorButton_3.setObjectName(u"colorButton_3")
+        self.colorButton_3.setMinimumSize(QSize(28, 28))
+        self.colorButton_3.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_3, 0, 2, 1, 1)
+
+        self.colorButton_4 = QPushButton(self.widget_palette_grid)
+        self.colorButton_4.setObjectName(u"colorButton_4")
+        self.colorButton_4.setMinimumSize(QSize(28, 28))
+        self.colorButton_4.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_4, 0, 3, 1, 1)
+
+        self.colorButton_5 = QPushButton(self.widget_palette_grid)
+        self.colorButton_5.setObjectName(u"colorButton_5")
+        self.colorButton_5.setMinimumSize(QSize(28, 28))
+        self.colorButton_5.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_5, 0, 4, 1, 1)
+
+        self.colorButton_6 = QPushButton(self.widget_palette_grid)
+        self.colorButton_6.setObjectName(u"colorButton_6")
+        self.colorButton_6.setMinimumSize(QSize(28, 28))
+        self.colorButton_6.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_6, 0, 5, 1, 1)
+
+        self.colorButton_7 = QPushButton(self.widget_palette_grid)
+        self.colorButton_7.setObjectName(u"colorButton_7")
+        self.colorButton_7.setMinimumSize(QSize(28, 28))
+        self.colorButton_7.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_7, 0, 6, 1, 1)
+
+        self.colorButton_8 = QPushButton(self.widget_palette_grid)
+        self.colorButton_8.setObjectName(u"colorButton_8")
+        self.colorButton_8.setMinimumSize(QSize(28, 28))
+        self.colorButton_8.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_8, 0, 7, 1, 1)
+
+        self.colorButton_9 = QPushButton(self.widget_palette_grid)
+        self.colorButton_9.setObjectName(u"colorButton_9")
+        self.colorButton_9.setMinimumSize(QSize(28, 28))
+        self.colorButton_9.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_9, 0, 8, 1, 1)
+
+        self.colorButton_10 = QPushButton(self.widget_palette_grid)
+        self.colorButton_10.setObjectName(u"colorButton_10")
+        self.colorButton_10.setMinimumSize(QSize(28, 28))
+        self.colorButton_10.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_10, 0, 9, 1, 1)
+
+        self.colorButton_11 = QPushButton(self.widget_palette_grid)
+        self.colorButton_11.setObjectName(u"colorButton_11")
+        self.colorButton_11.setMinimumSize(QSize(28, 28))
+        self.colorButton_11.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_11, 0, 10, 1, 1)
+
+        self.colorButton_12 = QPushButton(self.widget_palette_grid)
+        self.colorButton_12.setObjectName(u"colorButton_12")
+        self.colorButton_12.setMinimumSize(QSize(28, 28))
+        self.colorButton_12.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_12, 0, 11, 1, 1)
+
+        self.colorButton_13 = QPushButton(self.widget_palette_grid)
+        self.colorButton_13.setObjectName(u"colorButton_13")
+        self.colorButton_13.setMinimumSize(QSize(28, 28))
+        self.colorButton_13.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_13, 0, 12, 1, 1)
+
+        self.colorButton_14 = QPushButton(self.widget_palette_grid)
+        self.colorButton_14.setObjectName(u"colorButton_14")
+        self.colorButton_14.setMinimumSize(QSize(28, 28))
+        self.colorButton_14.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_14, 0, 13, 1, 1)
+
+        self.colorButton_19 = QPushButton(self.widget_palette_grid)
+        self.colorButton_19.setObjectName(u"colorButton_19")
+        self.colorButton_19.setMinimumSize(QSize(28, 28))
+        self.colorButton_19.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_19, 1, 4, 1, 1)
+
+        self.colorButton_20 = QPushButton(self.widget_palette_grid)
+        self.colorButton_20.setObjectName(u"colorButton_20")
+        self.colorButton_20.setMinimumSize(QSize(28, 28))
+        self.colorButton_20.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_20, 1, 5, 1, 1)
+
+        self.colorButton_21 = QPushButton(self.widget_palette_grid)
+        self.colorButton_21.setObjectName(u"colorButton_21")
+        self.colorButton_21.setMinimumSize(QSize(28, 28))
+        self.colorButton_21.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_21, 1, 6, 1, 1)
+
+        self.colorButton_22 = QPushButton(self.widget_palette_grid)
+        self.colorButton_22.setObjectName(u"colorButton_22")
+        self.colorButton_22.setMinimumSize(QSize(28, 28))
+        self.colorButton_22.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_22, 1, 7, 1, 1)
+
+        self.colorButton_23 = QPushButton(self.widget_palette_grid)
+        self.colorButton_23.setObjectName(u"colorButton_23")
+        self.colorButton_23.setMinimumSize(QSize(28, 28))
+        self.colorButton_23.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_23, 1, 8, 1, 1)
+
+        self.colorButton_24 = QPushButton(self.widget_palette_grid)
+        self.colorButton_24.setObjectName(u"colorButton_24")
+        self.colorButton_24.setMinimumSize(QSize(28, 28))
+        self.colorButton_24.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_24, 1, 9, 1, 1)
+
+        self.colorButton_25 = QPushButton(self.widget_palette_grid)
+        self.colorButton_25.setObjectName(u"colorButton_25")
+        self.colorButton_25.setMinimumSize(QSize(28, 28))
+        self.colorButton_25.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_25, 1, 10, 1, 1)
+
+        self.colorButton_26 = QPushButton(self.widget_palette_grid)
+        self.colorButton_26.setObjectName(u"colorButton_26")
+        self.colorButton_26.setMinimumSize(QSize(28, 28))
+        self.colorButton_26.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_26, 1, 11, 1, 1)
+
+        self.colorButton_27 = QPushButton(self.widget_palette_grid)
+        self.colorButton_27.setObjectName(u"colorButton_27")
+        self.colorButton_27.setMinimumSize(QSize(28, 28))
+        self.colorButton_27.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_27, 1, 12, 1, 1)
+
+        self.colorButton_28 = QPushButton(self.widget_palette_grid)
+        self.colorButton_28.setObjectName(u"colorButton_28")
+        self.colorButton_28.setMinimumSize(QSize(28, 28))
+        self.colorButton_28.setStyleSheet(u"border: 1px solid #888; border-radius: 2px;")
+
+        self.gridLayout_2.addWidget(self.colorButton_28, 1, 13, 1, 1)
+
+
+        self.horizontalLayout_palette.addWidget(self.widget_palette_grid)
+
+        self.paletteDock.setWidget(self.paletteDockContents)
+        MainWindow.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.paletteDock)
+        self.menuBar = QMenuBar(MainWindow)
+        self.menuBar.setObjectName(u"menuBar")
+        self.menuBar.setGeometry(QRect(0, 0, 760, 26))
+        self.menuBar.setNativeMenuBar(False)
+        self.menuFIle = QMenu(self.menuBar)
+        self.menuFIle.setObjectName(u"menuFIle")
+        self.menuFIle.setTearOffEnabled(False)
+        self.menuEdit = QMenu(self.menuBar)
+        self.menuEdit.setObjectName(u"menuEdit")
+        self.menuView = QMenu(self.menuBar)
+        self.menuView.setObjectName(u"menuView")
+        self.menuImage = QMenu(self.menuBar)
+        self.menuImage.setObjectName(u"menuImage")
+        self.menuHelp = QMenu(self.menuBar)
+        self.menuHelp.setObjectName(u"menuHelp")
+        MainWindow.setMenuBar(self.menuBar)
+        self.statusBar = QStatusBar(MainWindow)
+        self.statusBar.setObjectName(u"statusBar")
+        self.statusBar.setEnabled(True)
+        self.statusBar.setSizeGripEnabled(True)
+        MainWindow.setStatusBar(self.statusBar)
+        self.fontToolbar = QToolBar(MainWindow)
+        self.fontToolbar.setObjectName(u"fontToolbar")
+        self.fontToolbar.setMinimumSize(QSize(0, 0))
+        self.fontToolbar.setVisible(True)
+        self.fontToolbar.setStyleSheet(u"margin-left: 2px;margin-right: 1px; padding-left: 3px; padding-right: 3px;")
+        self.fontToolbar.setIconSize(QSize(24, 30))
+        MainWindow.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.fontToolbar)
+        self.selectionSelectionToolbar = QToolBar(MainWindow)
+        self.selectionSelectionToolbar.setObjectName(u"selectionSelectionToolbar")
+        self.selectionSelectionToolbar.setVisible(True)
+        self.selectionSelectionToolbar.setStyleSheet(u"\n"
+"\n"
+"            QToolBar {\n"
+"\n"
+"                background: rgba(255, 255, 255, 0.9);\n"
+"\n"
+"                border: 1px solid #ced4da;\n"
+"\n"
+"                border-radius: 8px;\n"
+"\n"
+"                margin: 10px;\n"
+"\n"
+"                padding: 5px;\n"
+"\n"
+"                spacing: 8px;\n"
+"\n"
+"            }\n"
+"\n"
+"            QToolButton {\n"
+"\n"
+"                padding: 6px;\n"
+"\n"
+"                border-radius: 6px;\n"
+"\n"
+"            }\n"
+"\n"
+"            QToolButton:hover {\n"
+"\n"
+"                background: #f1f3f5;\n"
+"\n"
+"            }\n"
+"\n"
+"            QToolButton:checked {\n"
+"\n"
+"                background: #e7f5ff;\n"
+"\n"
+"                border: 1px solid #3399FF;\n"
+"\n"
+"            }\n"
+"\n"
+"        ")
+        MainWindow.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.selectionSelectionToolbar)
+        self.toolsDock.raise_()
+        self.paletteDock.raise_()
+
+        self.menuBar.addAction(self.menuFIle.menuAction())
+        self.menuBar.addAction(self.menuEdit.menuAction())
+        self.menuBar.addAction(self.menuView.menuAction())
+        self.menuBar.addAction(self.menuImage.menuAction())
+        self.menuBar.addAction(self.menuHelp.menuAction())
+        self.menuFIle.addAction(self.actionNewImage)
+        self.menuFIle.addAction(self.actionOpenImage)
+        self.menuFIle.addAction(self.actionSave)
+        self.menuFIle.addAction(self.actionSaveAs)
+        self.menuFIle.addSeparator()
+        self.menuFIle.addSeparator()
+        self.menuFIle.addAction(self.actionExit)
+        self.menuEdit.addAction(self.actionUndo)
+        self.menuEdit.addAction(self.actionRedo)
+        self.menuEdit.addSeparator()
+        self.menuEdit.addAction(self.actionCut)
+        self.menuEdit.addAction(self.actionCopy)
+        self.menuEdit.addAction(self.actionPaste)
+        self.menuEdit.addSeparator()
+        self.menuEdit.addAction(self.actionSelectAll)
+        self.menuEdit.addAction(self.actionDeselect)
+        self.menuEdit.addAction(self.actionInvertSelection)
+        self.menuEdit.addSeparator()
+        self.menuEdit.addAction(self.actionClearImage)
+        self.menuView.addAction(self.actionZoomIn)
+        self.menuView.addAction(self.actionZoomOut)
+        self.menuView.addAction(self.actionNoZoom)
+        self.menuView.addSeparator()
+        self.menuView.addAction(self.actionShowToolProperties)
+        self.menuImage.addAction(self.actionResize)
+        self.menuImage.addAction(self.actionInvertColors)
+        self.menuImage.addSeparator()
+        self.menuImage.addAction(self.actionRotateRight)
+        self.menuImage.addAction(self.actionFlipVertical)
+        self.menuImage.addAction(self.actionFlipHorizontal)
+        self.fontToolbar.addAction(self.actionBold)
+        self.fontToolbar.addAction(self.actionItalic)
+        self.fontToolbar.addAction(self.actionUnderline)
+        self.selectionSelectionToolbar.addAction(self.actionSelectRect)
+        self.selectionSelectionToolbar.addAction(self.actionSelectEllipse)
+        self.selectionSelectionToolbar.addAction(self.actionSelectPoly)
+        self.selectionSelectionToolbar.addAction(self.actionSelectFree)
+        self.selectionSelectionToolbar.addAction(self.actionSelectWand)
+
+        self.retranslateUi(MainWindow)
+
+        QMetaObject.connectSlotsByName(MainWindow)
+    # setupUi
+
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"ecPaint", None))
+        self.actionCopy.setText(QCoreApplication.translate("MainWindow", u"Copy", None))
+#if QT_CONFIG(shortcut)
+        self.actionCopy.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+C", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionClearImage.setText(QCoreApplication.translate("MainWindow", u"Clear Image", None))
+        self.actionZoomIn.setText(QCoreApplication.translate("MainWindow", u"Zoom In", None))
+        self.actionZoomIn.setIconText(QCoreApplication.translate("MainWindow", u"Zoom In", None))
+        self.actionZoomOut.setText(QCoreApplication.translate("MainWindow", u"Zoom Out", None))
+        self.actionOpenImage.setText(QCoreApplication.translate("MainWindow", u"Open...", None))
+        self.actionInvertColors.setText(QCoreApplication.translate("MainWindow", u"Negative", None))
+        self.actionFlipHorizontal.setText(QCoreApplication.translate("MainWindow", u"Mirror", None))
+        self.actionFlipHorizontal.setIconText(QCoreApplication.translate("MainWindow", u"Mirror", None))
+#if QT_CONFIG(tooltip)
+        self.actionFlipHorizontal.setToolTip(QCoreApplication.translate("MainWindow", u"Mirror", None))
+#endif // QT_CONFIG(tooltip)
+        self.actionFlipVertical.setText(QCoreApplication.translate("MainWindow", u"Flip", None))
+        self.actionNewImage.setText(QCoreApplication.translate("MainWindow", u"New", None))
+        self.actionBold.setText(QCoreApplication.translate("MainWindow", u"Bold", None))
+#if QT_CONFIG(shortcut)
+        self.actionBold.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+B", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionItalic.setText(QCoreApplication.translate("MainWindow", u"Italic", None))
+#if QT_CONFIG(shortcut)
+        self.actionItalic.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+I", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionUnderline.setText(QCoreApplication.translate("MainWindow", u"Underline", None))
+        self.actionFillShapes.setText(QCoreApplication.translate("MainWindow", u"Fill Shapes?", None))
+        self.actionUndo.setText(QCoreApplication.translate("MainWindow", u"Undo", None))
+#if QT_CONFIG(shortcut)
+        self.actionUndo.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+Z", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionRedo.setText(QCoreApplication.translate("MainWindow", u"Redo", None))
+#if QT_CONFIG(shortcut)
+        self.actionRedo.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+Y", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionCut.setText(QCoreApplication.translate("MainWindow", u"Cut", None))
+#if QT_CONFIG(shortcut)
+        self.actionCut.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+X", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionPaste.setText(QCoreApplication.translate("MainWindow", u"Paste", None))
+#if QT_CONFIG(shortcut)
+        self.actionPaste.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+V", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionPasteAsNew.setText(QCoreApplication.translate("MainWindow", u"Paste as New Image...", None))
+        self.actionSelectAll.setText(QCoreApplication.translate("MainWindow", u"Select All", None))
+#if QT_CONFIG(shortcut)
+        self.actionSelectAll.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+A", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionDeselect.setText(QCoreApplication.translate("MainWindow", u"Select None", None))
+#if QT_CONFIG(shortcut)
+        self.actionDeselect.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+D", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionContour.setText(QCoreApplication.translate("MainWindow", u"Contour?", None))
+        self.actionOnlyFill.setText(QCoreApplication.translate("MainWindow", u"Only Fill?", None))
+        self.actionSave.setText(QCoreApplication.translate("MainWindow", u"Save", None))
+        self.actionSave.setIconText(QCoreApplication.translate("MainWindow", u"Save", None))
+#if QT_CONFIG(tooltip)
+        self.actionSave.setToolTip(QCoreApplication.translate("MainWindow", u"Save Image", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(shortcut)
+        self.actionSave.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+S", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
+#if QT_CONFIG(shortcut)
+        self.actionExit.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+Q", None))
+#endif // QT_CONFIG(shortcut)
+        self.actionSaveAs.setText(QCoreApplication.translate("MainWindow", u"Save As...", None))
+        self.actionSaveAs.setIconText(QCoreApplication.translate("MainWindow", u"Save As...", None))
+        self.actionRect.setText(QCoreApplication.translate("MainWindow", u"Rectangle", None))
+        self.actionEllipse.setText(QCoreApplication.translate("MainWindow", u"Ellipse", None))
+        self.actionRoundRect.setText(QCoreApplication.translate("MainWindow", u"Rounded Rectangle", None))
+        self.actionPolygon.setText(QCoreApplication.translate("MainWindow", u"Polygon", None))
+        self.actionRegularPoly.setText(QCoreApplication.translate("MainWindow", u"Regular Polygon", None))
+        self.actionSpline.setText(QCoreApplication.translate("MainWindow", u"Spline", None))
+        self.actionLine.setText(QCoreApplication.translate("MainWindow", u"Line", None))
+        self.actionPolyline.setText(QCoreApplication.translate("MainWindow", u"Polyline", None))
+        self.actionSelectPoly.setText(QCoreApplication.translate("MainWindow", u"Polygon Select", None))
+        self.actionSelectFree.setText(QCoreApplication.translate("MainWindow", u"Lasso Select", None))
+        self.actionSelectWand.setText(QCoreApplication.translate("MainWindow", u"Wand Select", None))
+        self.actionSelectRect.setText(QCoreApplication.translate("MainWindow", u"Rectangle Select", None))
+        self.actionSelectEllipse.setText(QCoreApplication.translate("MainWindow", u"Rectangle Ellipse", None))
+#if QT_CONFIG(tooltip)
+        self.actionSelectEllipse.setToolTip(QCoreApplication.translate("MainWindow", u"Ellipse Select", None))
+#endif // QT_CONFIG(tooltip)
+        self.actionNoZoom.setText(QCoreApplication.translate("MainWindow", u"Actual Size", None))
+        self.actionRotateRight.setText(QCoreApplication.translate("MainWindow", u"Rotate ", None))
+        self.actionRotateRight.setIconText(QCoreApplication.translate("MainWindow", u"Rotate Right", None))
+        self.actionResize.setText(QCoreApplication.translate("MainWindow", u"Resize", None))
+        self.actionResize.setIconText(QCoreApplication.translate("MainWindow", u"Resize", None))
+        self.actionInvertSelection.setText(QCoreApplication.translate("MainWindow", u"Select Invert ", None))
+        self.actionInvertSelection.setIconText(QCoreApplication.translate("MainWindow", u"Invert ", None))
+        self.actionSimpleLine.setText(QCoreApplication.translate("MainWindow", u"Line", None))
+        self.actionShowToolProperties.setText(QCoreApplication.translate("MainWindow", u"Show Tool Properties", None))
+#if QT_CONFIG(tooltip)
+        self.toolsDock.setToolTip(QCoreApplication.translate("MainWindow", u"Toolbar", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        self.toolsDock.setStatusTip(QCoreApplication.translate("MainWindow", u"Toolbar", None))
+#endif // QT_CONFIG(statustip)
+#if QT_CONFIG(accessibility)
+        self.toolsDock.setAccessibleName(QCoreApplication.translate("MainWindow", u"Toolbar", None))
+#endif // QT_CONFIG(accessibility)
+#if QT_CONFIG(accessibility)
+        self.toolsDock.setAccessibleDescription(QCoreApplication.translate("MainWindow", u"Toolbar", None))
+#endif // QT_CONFIG(accessibility)
+        self.toolsDock.setWindowTitle(QCoreApplication.translate("MainWindow", u"Toolbar", None))
+#if QT_CONFIG(tooltip)
+        self.simplelineButton.setToolTip(QCoreApplication.translate("MainWindow", u"Simple Line", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.regularpolyButton.setToolTip(QCoreApplication.translate("MainWindow", u"Regular Polygon", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.polylineButton.setToolTip(QCoreApplication.translate("MainWindow", u"Polyline", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.roundrectButton.setToolTip(QCoreApplication.translate("MainWindow", u"Rounded Rectangle", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.splineButton.setToolTip(QCoreApplication.translate("MainWindow", u"Spline", None))
+#endif // QT_CONFIG(tooltip)
+        self.textButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.rectButton.setToolTip(QCoreApplication.translate("MainWindow", u"Rectangle", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.ellipseButton.setToolTip(QCoreApplication.translate("MainWindow", u"Ellipse", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.polygonButton.setToolTip(QCoreApplication.translate("MainWindow", u"Polygon", None))
+#endif // QT_CONFIG(tooltip)
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Stroke: 12", None))
+        self.solidBack.setText("")
+        self.transBack.setText("")
+#if QT_CONFIG(tooltip)
+        self.contourButton.setToolTip("")
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.fillShapesButton.setToolTip("")
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.onlyFillButton.setToolTip("")
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.paletteDock.setToolTip(QCoreApplication.translate("MainWindow", u"Palette", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        self.paletteDock.setStatusTip(QCoreApplication.translate("MainWindow", u"Palette", None))
+#endif // QT_CONFIG(statustip)
+#if QT_CONFIG(accessibility)
+        self.paletteDock.setAccessibleName(QCoreApplication.translate("MainWindow", u"Palette", None))
+#endif // QT_CONFIG(accessibility)
+#if QT_CONFIG(accessibility)
+        self.paletteDock.setAccessibleDescription(QCoreApplication.translate("MainWindow", u"Palette", None))
+#endif // QT_CONFIG(accessibility)
+        self.paletteDock.setWindowTitle(QCoreApplication.translate("MainWindow", u"Palette", None))
+        self.switchColors.setText("")
+        self.bnButton.setText("")
+        self.secondaryButton.setText("")
+        self.primaryButton.setText("")
+        self.colorButton_16.setText("")
+        self.colorButton_18.setText("")
+        self.colorButton_17.setText("")
+        self.colorButton_15.setText("")
+        self.colorButton_1.setText("")
+        self.colorButton_2.setText("")
+        self.colorButton_3.setText("")
+        self.colorButton_4.setText("")
+        self.colorButton_5.setText("")
+        self.colorButton_6.setText("")
+        self.colorButton_7.setText("")
+        self.colorButton_8.setText("")
+        self.colorButton_9.setText("")
+        self.colorButton_10.setText("")
+        self.colorButton_11.setText("")
+        self.colorButton_12.setText("")
+        self.colorButton_13.setText("")
+        self.colorButton_14.setText("")
+        self.colorButton_19.setText("")
+        self.colorButton_20.setText("")
+        self.colorButton_21.setText("")
+        self.colorButton_22.setText("")
+        self.colorButton_23.setText("")
+        self.colorButton_24.setText("")
+        self.colorButton_25.setText("")
+        self.colorButton_26.setText("")
+        self.colorButton_27.setText("")
+        self.colorButton_28.setText("")
+        self.menuFIle.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
+        self.menuEdit.setTitle(QCoreApplication.translate("MainWindow", u"Edit", None))
+        self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))
+        self.menuImage.setTitle(QCoreApplication.translate("MainWindow", u"Image", None))
+        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
+        self.fontToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Font Properties", None))
+        self.selectionSelectionToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Selection Tools", None))
+    # retranslateUi
+

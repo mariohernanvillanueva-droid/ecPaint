@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ecpaint
+Exec=ecpaint
+Icon=ecpaint
+Categories=Graphics;
+Terminal=false
+StartupWMClass=painter
