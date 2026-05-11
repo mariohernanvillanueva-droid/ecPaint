@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/smudge.png</file>
     <file alias="no-contour1.png">icons/no-contour1.png</file>
     <file alias="contour1.png">icons/contour1.png</file>
     <file alias="contour-filled1.png">icons/contour-filled1.png</file>
@@ -13,6 +14,7 @@
     <file alias="blue-polyline.png">icons/blue-polyline.png</file>
     <file alias="blue-rect.png">icons/blue-rect.png</file>
     <file alias="blue-roundrect.png">icons/blue-roundrect.png</file>
+    <file alias="smudge.png">icons/smudge.png</file>
     <file alias="bn.png">icons/bn.png</file>
     <file alias="border-weight.png">icons/border-weight.png</file>
     <file alias="circlearrow.png">icons/circlearrow.png</file>
@@ -46,7 +48,6 @@
     <file alias="sel.png">icons/sel.png</file>
     <file alias="select-free.png">icons/select-free.png</file>
     <file alias="select-poly.png">icons/select-poly.png</file>
-    <file alias="sign.png">icons/sign.png</file>
     <file alias="simple-line.png">icons/simple-line.png</file>
     <file alias="solidbk.png">icons/solidbk.png</file>
     <file alias="spray.png">icons/spray.png</file>

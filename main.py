@@ -697,7 +697,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Show/Hide Antialias Checkbox
         antialias_modes = ["pen", "brush", "marker", "simpleline", "spline",
-                           "ellipse", "rect", "polygon", "roundrect", "regularpoly"]
+                           "ellipse", "rect", "polygon", "roundrect", "regularpoly", "smudge"]
         is_antialias_tool = mode in antialias_modes
         self.antialiasCheckbox.setVisible(is_antialias_tool)
         if is_antialias_tool:

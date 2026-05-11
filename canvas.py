@@ -2583,6 +2583,58 @@ class Canvas(QLabel):
 
         self.generic_mouseReleaseEvent(e)
 
+    # Smudge events
+
+    def smudge_mousePressEvent(self, e):
+        self.generic_mousePressEvent(e)
+        self.smudge_last_image = None
+        if getattr(self, "_working_image", None) is not None:
+            size = self.config["size"] * constants.BRUSH_MULT
+            rect = QRect(self.last_pos.x() - size // 2, self.last_pos.y() - size // 2, size, size)
+            self.smudge_last_image = self._working_image.copy(rect)
+        self.smudge_mouseMoveEvent(e)
+
+    def smudge_mouseMoveEvent(self, e):
+        if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
+            curr = self._to_image_pixel(e)
+            size = self.config["size"] * constants.BRUSH_MULT
+            
+            p = QPainter(self._working_image)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
+            
+            dist = math.hypot(curr.x() - self.last_pos.x(), curr.y() - self.last_pos.y())
+            steps = max(1, int(dist))
+            
+            for i in range(1, steps + 1):
+                t = i / steps
+                x = int(self.last_pos.x() + t * (curr.x() - self.last_pos.x()))
+                y = int(self.last_pos.y() + t * (curr.y() - self.last_pos.y()))
+                
+                if getattr(self, "smudge_last_image", None) is not None:
+                    p.setOpacity(0.5)
+                    path = QPainterPath()
+                    path.addEllipse(x - size // 2, y - size // 2, size, size)
+                    p.setClipPath(path)
+                    
+                    p.drawImage(x - size // 2, y - size // 2, self.smudge_last_image)
+                    p.setClipping(False)
+                    p.setOpacity(1.0)
+                
+                rect = QRect(x - size // 2, y - size // 2, size, size)
+                self.smudge_last_image = self._working_image.copy(rect)
+                
+            self.last_pos = curr
+            p.end()
+            self._image_pixmap = QPixmap.fromImage(self._working_image)
+            self.update()
+
+    def smudge_mouseReleaseEvent(self, e):
+        if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
+            self._image_pixmap = QPixmap.fromImage(self._working_image)
+            self.setPixmap(self._image_pixmap, record=False)
+        self.smudge_last_image = None
+        self.generic_mouseReleaseEvent(e)
+
     # Spray events
 
     def spray_mousePressEvent(self, e):

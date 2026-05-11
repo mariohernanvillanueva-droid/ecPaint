@@ -327,7 +327,7 @@ class Ui_MainWindow(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.toolsDock.sizePolicy().hasHeightForWidth())
         self.toolsDock.setSizePolicy(sizePolicy1)
-        self.toolsDock.setMinimumSize(QSize(72, 584))
+        self.toolsDock.setMinimumSize(QSize(72, 585))
         self.toolsDock.setMaximumSize(QSize(72, 524287))
         self.toolsDock.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable)
         self.toolsDock.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
@@ -357,6 +357,7 @@ class Ui_MainWindow(object):
         self.simplelineButton.setObjectName(u"simplelineButton")
         self.simplelineButton.setMinimumSize(QSize(28, 28))
         self.simplelineButton.setIcon(icon24)
+        self.simplelineButton.setIconSize(QSize(24, 24))
         self.simplelineButton.setCheckable(True)
         self.simplelineButton.setFlat(True)
 
@@ -366,6 +367,7 @@ class Ui_MainWindow(object):
         self.regularpolyButton.setObjectName(u"regularpolyButton")
         self.regularpolyButton.setMinimumSize(QSize(28, 28))
         self.regularpolyButton.setIcon(icon14)
+        self.regularpolyButton.setIconSize(QSize(24, 24))
         self.regularpolyButton.setCheckable(True)
         self.regularpolyButton.setFlat(True)
 
@@ -403,6 +405,7 @@ class Ui_MainWindow(object):
         self.roundrectButton.setObjectName(u"roundrectButton")
         self.roundrectButton.setMinimumSize(QSize(28, 28))
         self.roundrectButton.setIcon(icon12)
+        self.roundrectButton.setIconSize(QSize(24, 24))
         self.roundrectButton.setCheckable(True)
         self.roundrectButton.setFlat(True)
 
@@ -412,6 +415,7 @@ class Ui_MainWindow(object):
         self.splineButton.setObjectName(u"splineButton")
         self.splineButton.setMinimumSize(QSize(28, 28))
         self.splineButton.setIcon(icon15)
+        self.splineButton.setIconSize(QSize(24, 24))
         self.splineButton.setCheckable(True)
         self.splineButton.setFlat(True)
 
@@ -423,6 +427,7 @@ class Ui_MainWindow(object):
         icon25 = QIcon()
         icon25.addFile(u":/icons/paint-can.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.fillButton.setIcon(icon25)
+        self.fillButton.setIconSize(QSize(24, 24))
         self.fillButton.setCheckable(True)
         self.fillButton.setFlat(True)
 
@@ -434,6 +439,7 @@ class Ui_MainWindow(object):
         icon26 = QIcon()
         icon26.addFile(u":/icons/eraser.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.eraserButton.setIcon(icon26)
+        self.eraserButton.setIconSize(QSize(24, 24))
         self.eraserButton.setCheckable(True)
         self.eraserButton.setFlat(True)
 
@@ -445,6 +451,7 @@ class Ui_MainWindow(object):
         icon27 = QIcon()
         icon27.addFile(u":/icons/pencil.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.penButton.setIcon(icon27)
+        self.penButton.setIconSize(QSize(24, 24))
         self.penButton.setCheckable(True)
         self.penButton.setFlat(True)
 
@@ -467,6 +474,7 @@ class Ui_MainWindow(object):
         self.selectToolButton.setObjectName(u"selectToolButton")
         self.selectToolButton.setMinimumSize(QSize(28, 28))
         self.selectToolButton.setIcon(icon21)
+        self.selectToolButton.setIconSize(QSize(24, 24))
         self.selectToolButton.setCheckable(True)
 
         self.gridLayout.addWidget(self.selectToolButton, 0, 1, 1, 1)
@@ -477,6 +485,7 @@ class Ui_MainWindow(object):
         icon29 = QIcon()
         icon29.addFile(u":/icons/magnifier-zoom.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.magnifierButton.setIcon(icon29)
+        self.magnifierButton.setIconSize(QSize(24, 24))
         self.magnifierButton.setCheckable(True)
         self.magnifierButton.setFlat(True)
 
@@ -488,6 +497,7 @@ class Ui_MainWindow(object):
         icon30 = QIcon()
         icon30.addFile(u":/icons/pipette.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.dropperButton.setIcon(icon30)
+        self.dropperButton.setIconSize(QSize(24, 24))
         self.dropperButton.setCheckable(True)
         self.dropperButton.setFlat(True)
 
@@ -516,6 +526,7 @@ class Ui_MainWindow(object):
         icon32 = QIcon()
         icon32.addFile(u":/icons/paint-brush.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.brushButton.setIcon(icon32)
+        self.brushButton.setIconSize(QSize(24, 24))
         self.brushButton.setCheckable(True)
         self.brushButton.setFlat(True)
 
@@ -540,6 +551,7 @@ class Ui_MainWindow(object):
         icon34 = QIcon()
         icon34.addFile(u":/icons/marker.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.markerButton.setIcon(icon34)
+        self.markerButton.setIconSize(QSize(24, 24))
         self.markerButton.setCheckable(True)
         self.markerButton.setFlat(True)
 
@@ -549,6 +561,7 @@ class Ui_MainWindow(object):
         self.rectButton.setObjectName(u"rectButton")
         self.rectButton.setMinimumSize(QSize(28, 28))
         self.rectButton.setIcon(icon10)
+        self.rectButton.setIconSize(QSize(24, 24))
         self.rectButton.setCheckable(True)
         self.rectButton.setFlat(True)
 
@@ -558,6 +571,7 @@ class Ui_MainWindow(object):
         self.ellipseButton.setObjectName(u"ellipseButton")
         self.ellipseButton.setMinimumSize(QSize(28, 28))
         self.ellipseButton.setIcon(icon11)
+        self.ellipseButton.setIconSize(QSize(24, 24))
         self.ellipseButton.setCheckable(True)
         self.ellipseButton.setFlat(True)
 
@@ -567,10 +581,20 @@ class Ui_MainWindow(object):
         self.polygonButton.setObjectName(u"polygonButton")
         self.polygonButton.setMinimumSize(QSize(28, 28))
         self.polygonButton.setIcon(icon13)
+        self.polygonButton.setIconSize(QSize(24, 24))
         self.polygonButton.setCheckable(True)
         self.polygonButton.setFlat(True)
 
         self.gridLayout.addWidget(self.polygonButton, 10, 0, 1, 1)
+
+        self.smudgeButton = QPushButton(self.widget)
+        self.smudgeButton.setObjectName(u"smudgeButton")
+        icon35 = QIcon()
+        icon35.addFile(u":/icons/icons/smudge.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.smudgeButton.setIcon(icon35)
+        self.smudgeButton.setIconSize(QSize(24, 24))
+
+        self.gridLayout.addWidget(self.smudgeButton, 11, 0, 1, 1)
 
 
         self.verticalLayout_dock.addWidget(self.widget)
@@ -627,9 +651,9 @@ class Ui_MainWindow(object):
         self.solidBack.setMinimumSize(QSize(64, 56))
         self.solidBack.setMaximumSize(QSize(64, 56))
         self.solidBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon35 = QIcon()
-        icon35.addFile(u":/icons/solidbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.solidBack.setIcon(icon35)
+        icon36 = QIcon()
+        icon36.addFile(u":/icons/solidbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.solidBack.setIcon(icon36)
         self.solidBack.setIconSize(QSize(44, 32))
         self.solidBack.setCheckable(True)
 
@@ -647,9 +671,9 @@ class Ui_MainWindow(object):
         self.transBack.setMaximumSize(QSize(64, 56))
         self.transBack.setSizeIncrement(QSize(0, 0))
         self.transBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon36 = QIcon()
-        icon36.addFile(u":/icons/transbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.transBack.setIcon(icon36)
+        icon37 = QIcon()
+        icon37.addFile(u":/icons/transbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.transBack.setIcon(icon37)
         self.transBack.setIconSize(QSize(44, 32))
         self.transBack.setCheckable(True)
         self.transBack.setChecked(True)
@@ -683,9 +707,9 @@ class Ui_MainWindow(object):
         self.contourButton.setMaximumSize(QSize(64, 32))
         self.contourButton.setLayoutDirection(Qt.LeftToRight)
         self.contourButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon37 = QIcon()
-        icon37.addFile(u":/icons/contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.contourButton.setIcon(icon37)
+        icon38 = QIcon()
+        icon38.addFile(u":/icons/contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.contourButton.setIcon(icon38)
         self.contourButton.setIconSize(QSize(64, 16))
         self.contourButton.setCheckable(True)
         self.contourButton.setChecked(True)
@@ -699,9 +723,9 @@ class Ui_MainWindow(object):
         self.fillShapesButton.setMinimumSize(QSize(64, 32))
         self.fillShapesButton.setMaximumSize(QSize(64, 32))
         self.fillShapesButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon38 = QIcon()
-        icon38.addFile(u":/icons/contour-filled1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.fillShapesButton.setIcon(icon38)
+        icon39 = QIcon()
+        icon39.addFile(u":/icons/contour-filled1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.fillShapesButton.setIcon(icon39)
         self.fillShapesButton.setIconSize(QSize(64, 16))
         self.fillShapesButton.setCheckable(True)
 
@@ -714,9 +738,9 @@ class Ui_MainWindow(object):
         self.onlyFillButton.setMinimumSize(QSize(64, 32))
         self.onlyFillButton.setMaximumSize(QSize(64, 32))
         self.onlyFillButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon39 = QIcon()
-        icon39.addFile(u":/icons/no-contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.onlyFillButton.setIcon(icon39)
+        icon40 = QIcon()
+        icon40.addFile(u":/icons/no-contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.onlyFillButton.setIcon(icon40)
         self.onlyFillButton.setIconSize(QSize(64, 16))
         self.onlyFillButton.setCheckable(True)
 
@@ -774,18 +798,18 @@ class Ui_MainWindow(object):
         self.switchColors.setObjectName(u"switchColors")
         self.switchColors.setMinimumSize(QSize(18, 18))
         self.switchColors.setMaximumSize(QSize(18, 18))
-        icon40 = QIcon()
-        icon40.addFile(u":/icons/switch.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.switchColors.setIcon(icon40)
+        icon41 = QIcon()
+        icon41.addFile(u":/icons/switch.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.switchColors.setIcon(icon41)
         self.switchColors.setFlat(True)
 
         self.colorGridLayout.addWidget(self.switchColors, 0, 3, 1, 1)
 
         self.bnButton = QPushButton(self.widget_colors_sel)
         self.bnButton.setObjectName(u"bnButton")
-        icon41 = QIcon()
-        icon41.addFile(u":/icons/bn.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.bnButton.setIcon(icon41)
+        icon42 = QIcon()
+        icon42.addFile(u":/icons/bn.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bnButton.setIcon(icon42)
 
         self.colorGridLayout.addWidget(self.bnButton, 2, 0, 1, 1)
 
@@ -1282,6 +1306,7 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(tooltip)
         self.polygonButton.setToolTip(QCoreApplication.translate("MainWindow", u"Polygon", None))
 #endif // QT_CONFIG(tooltip)
+        self.smudgeButton.setText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Stroke: 12", None))
         self.solidBack.setText("")
         self.transBack.setText("")

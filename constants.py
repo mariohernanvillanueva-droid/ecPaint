@@ -77,6 +77,7 @@ MODES = [
     "magnifier",
     "regularpoly",
     "simpleline",
+    "smudge",
 ]
 
 CANVAS_DIMENSIONS = 600, 400
