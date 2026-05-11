@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(760, 751)
+        MainWindow.resize(760, 840)
         MainWindow.setStyleSheet(u"QPushButton, QToolButton {\n"
 "\n"
 "    border: 1px solid transparent;\n"
@@ -593,6 +593,8 @@ class Ui_MainWindow(object):
         icon35.addFile(u":/icons/icons/smudge.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.smudgeButton.setIcon(icon35)
         self.smudgeButton.setIconSize(QSize(24, 24))
+        self.smudgeButton.setCheckable(True)
+        self.smudgeButton.setFlat(True)
 
         self.gridLayout.addWidget(self.smudgeButton, 11, 0, 1, 1)
 
@@ -1073,54 +1075,32 @@ class Ui_MainWindow(object):
         self.fontToolbar.setObjectName(u"fontToolbar")
         self.fontToolbar.setMinimumSize(QSize(0, 0))
         self.fontToolbar.setVisible(True)
-        self.fontToolbar.setStyleSheet(u"margin-left: 2px;margin-right: 1px; padding-left: 3px; padding-right: 3px;")
+        self.fontToolbar.setStyleSheet(u"")
         self.fontToolbar.setIconSize(QSize(24, 30))
-        MainWindow.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.fontToolbar)
+        MainWindow.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.fontToolbar)
         self.selectionSelectionToolbar = QToolBar(MainWindow)
         self.selectionSelectionToolbar.setObjectName(u"selectionSelectionToolbar")
+        self.selectionSelectionToolbar.setMinimumSize(QSize(0, 43))
         self.selectionSelectionToolbar.setVisible(True)
-        self.selectionSelectionToolbar.setStyleSheet(u"\n"
-"\n"
-"            QToolBar {\n"
-"\n"
-"                background: rgba(255, 255, 255, 0.9);\n"
-"\n"
-"                border: 1px solid #ced4da;\n"
-"\n"
-"                border-radius: 8px;\n"
-"\n"
-"                margin: 10px;\n"
-"\n"
-"                padding: 5px;\n"
-"\n"
-"                spacing: 8px;\n"
-"\n"
-"            }\n"
-"\n"
-"            QToolButton {\n"
-"\n"
-"                padding: 6px;\n"
-"\n"
-"                border-radius: 6px;\n"
-"\n"
-"            }\n"
-"\n"
-"            QToolButton:hover {\n"
-"\n"
-"                background: #f1f3f5;\n"
-"\n"
-"            }\n"
-"\n"
-"            QToolButton:checked {\n"
-"\n"
-"                background: #e7f5ff;\n"
-"\n"
-"                border: 1px solid #3399FF;\n"
-"\n"
-"            }\n"
-"\n"
-"        ")
-        MainWindow.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.selectionSelectionToolbar)
+        self.selectionSelectionToolbar.setStyleSheet(u"")
+        MainWindow.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.selectionSelectionToolbar)
+        self.wandToolbar = QToolBar(MainWindow)
+        self.wandToolbar.setObjectName(u"wandToolbar")
+        self.wandToolbar.setMinimumSize(QSize(0, 43))
+        self.wandToolbar.setVisible(True)
+        MainWindow.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.wandToolbar)
+        self.polyToolbar = QToolBar(MainWindow)
+        self.polyToolbar.setObjectName(u"polyToolbar")
+        self.polyToolbar.setMinimumSize(QSize(0, 43))
+        self.polyToolbar.setVisible(True)
+        MainWindow.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.polyToolbar)
+        MainWindow.insertToolBarBreak(self.polyToolbar)
+        self.smudgeToolbar = QToolBar(MainWindow)
+        self.smudgeToolbar.setObjectName(u"smudgeToolbar")
+        self.smudgeToolbar.setMinimumSize(QSize(0, 43))
+        self.smudgeToolbar.setVisible(True)
+        MainWindow.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.smudgeToolbar)
+        MainWindow.insertToolBarBreak(self.smudgeToolbar)
         self.toolsDock.raise_()
         self.paletteDock.raise_()
 
@@ -1167,6 +1147,7 @@ class Ui_MainWindow(object):
         self.selectionSelectionToolbar.addAction(self.actionSelectPoly)
         self.selectionSelectionToolbar.addAction(self.actionSelectFree)
         self.selectionSelectionToolbar.addAction(self.actionSelectWand)
+        self.smudgeToolbar.addSeparator()
 
         self.retranslateUi(MainWindow)
 
@@ -1180,6 +1161,9 @@ class Ui_MainWindow(object):
         self.actionCopy.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+C", None))
 #endif // QT_CONFIG(shortcut)
         self.actionClearImage.setText(QCoreApplication.translate("MainWindow", u"Clear Image", None))
+#if QT_CONFIG(tooltip)
+        self.actionClearImage.setToolTip(QCoreApplication.translate("MainWindow", u"Clear ", None))
+#endif // QT_CONFIG(tooltip)
         self.actionZoomIn.setText(QCoreApplication.translate("MainWindow", u"Zoom In", None))
         self.actionZoomIn.setIconText(QCoreApplication.translate("MainWindow", u"Zoom In", None))
         self.actionZoomOut.setText(QCoreApplication.translate("MainWindow", u"Zoom Out", None))
@@ -1371,5 +1355,8 @@ class Ui_MainWindow(object):
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
         self.fontToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Font Properties", None))
         self.selectionSelectionToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Selection Tools", None))
+        self.wandToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Wand Options", None))
+        self.polyToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Regular Poly Options", None))
+        self.smudgeToolbar.setWindowTitle(QCoreApplication.translate("MainWindow", u"Smudge Options", None))
     # retranslateUi
 

@@ -63,6 +63,8 @@ class Canvas(QLabel):
         "antialias": False,
         "poly_vertices": 5,
         "poly_inner_radius": 0.5,
+        "smudge_radius": 20,
+        "smudge_pressure": 50,
     }
 
     active_color = None
@@ -2589,7 +2591,7 @@ class Canvas(QLabel):
         self.generic_mousePressEvent(e)
         self.smudge_last_image = None
         if getattr(self, "_working_image", None) is not None:
-            size = self.config["size"] * constants.BRUSH_MULT
+            size = self.config["smudge_radius"]
             rect = QRect(self.last_pos.x() - size // 2, self.last_pos.y() - size // 2, size, size)
             self.smudge_last_image = self._working_image.copy(rect)
         self.smudge_mouseMoveEvent(e)
@@ -2597,7 +2599,8 @@ class Canvas(QLabel):
     def smudge_mouseMoveEvent(self, e):
         if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
             curr = self._to_image_pixel(e)
-            size = self.config["size"] * constants.BRUSH_MULT
+            size = self.config["smudge_radius"]
+            pressure = self.config["smudge_pressure"] / 100.0
             
             p = QPainter(self._working_image)
             p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
@@ -2611,7 +2614,7 @@ class Canvas(QLabel):
                 y = int(self.last_pos.y() + t * (curr.y() - self.last_pos.y()))
                 
                 if getattr(self, "smudge_last_image", None) is not None:
-                    p.setOpacity(0.5)
+                    p.setOpacity(pressure)
                     path = QPainterPath()
                     path.addEllipse(x - size // 2, y - size // 2, size, size)
                     p.setClipPath(path)
@@ -3057,6 +3060,25 @@ class Canvas(QLabel):
                          origin.y() + (dist if dy >= 0 else -dist))
         return current
 
+    def _get_angle_constrained_pos(self, origin, current, modifiers):
+        """Helper to constrain a point to the nearest 45-degree angle multiple relative to an origin if Shift is held."""
+        if origin is not None and current is not None and (modifiers & Qt.ShiftModifier):
+            dx = current.x() - origin.x()
+            dy = current.y() - origin.y()
+            
+            # Calculate angle in radians
+            angle = math.atan2(dy, dx)
+            # Round to nearest 45 degrees (pi/4)
+            angle = round(angle / (math.pi / 4)) * (math.pi / 4)
+            
+            # Calculate distance
+            dist = math.sqrt(dx*dx + dy*dy)
+            
+            # New coordinates
+            return QPoint(int(origin.x() + dist * math.cos(angle)),
+                          int(origin.y() + dist * math.sin(angle)))
+        return current
+
     def generic_shape_mouseDoubleClickEvent(self, e):
         if self.is_moving_shape and self.moving_rect:
             self._commit_generic_shape()
@@ -3089,12 +3111,12 @@ class Canvas(QLabel):
 
     def line_mouseMoveEvent(self, e):
         if self.origin_pos is not None:
-            self.current_pos = self._to_image_pixel(e)
+            self.current_pos = self._get_angle_constrained_pos(self.origin_pos, self._to_image_pixel(e), e.modifiers())
             self.update()
 
     def line_mouseReleaseEvent(self, e):
         if self.origin_pos is not None:
-            pt = self._to_image_pixel(e)
+            pt = self._get_angle_constrained_pos(self.origin_pos, self._to_image_pixel(e), e.modifiers())
             self.current_pos = pt
             self.history_pos = [self.origin_pos, self.current_pos]
             self._commit_line()
@@ -3131,12 +3153,12 @@ class Canvas(QLabel):
 
     def simpleline_mouseMoveEvent(self, e):
         if self.origin_pos is not None:
-            self.current_pos = self._to_image_pixel(e)
+            self.current_pos = self._get_angle_constrained_pos(self.origin_pos, self._to_image_pixel(e), e.modifiers())
             self.update()
 
     def simpleline_mouseReleaseEvent(self, e):
         if self.origin_pos is not None:
-            pt = self._to_image_pixel(e)
+            pt = self._get_angle_constrained_pos(self.origin_pos, self._to_image_pixel(e), e.modifiers())
             self.current_pos = pt
             self.history_pos = [self.origin_pos, self.current_pos]
             self._commit_line()
@@ -3174,6 +3196,8 @@ class Canvas(QLabel):
             self.shape_brush = QBrush(brush_color)
             pt = self._to_image_pixel(e)
             if self.history_pos:
+                # Constrain the next point relative to the previous point in the sequence
+                pt = self._get_angle_constrained_pos(self.history_pos[-1], pt, e.modifiers())
                 self.history_pos.append(pt)
             else:
                 self.history_pos = [pt]
@@ -3203,7 +3227,10 @@ class Canvas(QLabel):
     def generic_poly_timerEvent(self, final=False):
         if not final and self.timer_event == self.generic_poly_timerEvent:
             # Poll mouse position during both drag and hover phases for off-window support
-            self.current_pos = self._to_image_pixel(None)
+            pos = self._to_image_pixel(None)
+            if not getattr(self, "is_moving_shape", False) and getattr(self, "history_pos", None):
+                pos = self._get_angle_constrained_pos(self.history_pos[-1], pos, QApplication.keyboardModifiers())
+            self.current_pos = pos
             self.hover_pos = self.current_pos
             
             if getattr(self, "is_moving_shape", False):
@@ -3215,7 +3242,11 @@ class Canvas(QLabel):
         self.last_history = (self.history_pos if self.history_pos else []) + [self.current_pos]
 
     def generic_poly_mouseMoveEvent(self, e):
-        self.current_pos = self._to_image_pixel(e)
+        pos = self._to_image_pixel(e)
+        if not self.is_moving_shape and getattr(self, "history_pos", None):
+            pos = self._get_angle_constrained_pos(self.history_pos[-1], pos, e.modifiers())
+        
+        self.current_pos = pos
         if self.is_moving_shape:
             if self.is_dragging_shape:
                 pos = self.current_pos
@@ -3698,6 +3729,27 @@ class Canvas(QLabel):
                 painter.drawImage(0, 0, self._preview_overlay_image)
                 painter.restore()
 
+        # Smudge cursor preview (XOR Circle)
+        if self.mode == "smudge" and not is_moving and getattr(self, "hover_pos", None) is not None:
+            size = self.config.get("smudge_radius", 20)
+            painter.save()
+            painter.scale(s, s)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+            # Use XOR mode as requested to ensure visibility on any background
+            painter.setCompositionMode(QPainter.CompositionMode.RasterOp_SourceXorDestination)
+            
+            # Draw a 1px cosmetic white pen (which will invert because of XOR)
+            pen = QPen(Qt.GlobalColor.white, 0)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            
+            # The circle is centered at hover_pos with radius matching smudge_radius
+            # Using integer division to match the smudge implementation's centering
+            half = size // 2
+            rect = QRect(self.hover_pos.x() - half, self.hover_pos.y() - half, size, size)
+            painter.drawEllipse(rect)
+            painter.restore()
+
         # WYSIWYG Brush/Pen/Marker preview (Pixel-Perfect & Performance Optimized)
         if self.mode in ["brush", "pen", "marker"] and not is_drawing and not is_moving and getattr(self, "hover_pos", None) is not None:
             size = self.config["size"]
@@ -4167,18 +4219,24 @@ class Canvas(QLabel):
             return self.generic_poly_mouseMoveEvent(e)
             
         # Update current_pos using the most accurate coordinates available
-        self.current_pos = self._to_image_pixel(e)
+        pos = self._to_image_pixel(e)
         
         if getattr(self, "is_dragging_cp", False):
+            # Update Control Points (currently unconstrained, as is standard)
+            self.current_pos = pos
             if self.spline_state == 2:
                 # Update CP1
                 self.history_pos[2] = self.current_pos
             elif self.spline_state == 3:
                 # Update CP2
                 self.history_pos[3] = self.current_pos
-        elif getattr(self, "is_dragging_end", False) and len(self.history_pos) > 1:
-             # Update End point
-             self.history_pos[1] = self.current_pos
+        elif getattr(self, "is_dragging_end", False) and getattr(self, "history_pos", None):
+             # Update End point - Constrain to 45 degree angles relative to start point
+             self.current_pos = self._get_angle_constrained_pos(self.history_pos[0], pos, e.modifiers())
+             if len(self.history_pos) > 1:
+                self.history_pos[1] = self.current_pos
+        else:
+             self.current_pos = pos
         
         # In state 2 or 3, current_pos serves as a temporary CP preview in paintEvent
         self.update()
@@ -4198,6 +4256,9 @@ class Canvas(QLabel):
                 self.spline_finalize()
         elif getattr(self, "is_dragging_end", False):
             self.is_dragging_end = False
+            # Recalculate constrained position for the final point
+            self.current_pos = self._get_angle_constrained_pos(self.history_pos[0], self._to_image_pixel(e), e.modifiers())
+            
             start_pt = self.history_pos[0]
             if (abs(start_pt.x() - self.current_pos.x()) < 3 and 
                 abs(start_pt.y() - self.current_pos.y()) < 3):
@@ -4254,14 +4315,18 @@ class Canvas(QLabel):
                          (self.mode == "spline" and getattr(self, "spline_state", 0) in [2, 3]))
             
             if is_active:
-                self.current_pos = self._to_image_pixel(None)
+                modifiers = QApplication.keyboardModifiers()
+                pos = self._to_image_pixel(None)
                 if getattr(self, "is_dragging_cp", False):
+                    self.current_pos = pos
                     if self.spline_state == 2:
                         self.history_pos[2] = self.current_pos
                     elif self.spline_state == 3:
                         self.history_pos[3] = self.current_pos
-                elif getattr(self, "is_dragging_end", False) and len(self.history_pos) > 1:
-                    self.history_pos[1] = self.current_pos
+                elif getattr(self, "is_dragging_end", False) and getattr(self, "history_pos", None):
+                    self.current_pos = self._get_angle_constrained_pos(self.history_pos[0], pos, modifiers)
+                    if len(self.history_pos) > 1:
+                        self.history_pos[1] = self.current_pos
 
         self.update()
         self.last_pos = self.current_pos

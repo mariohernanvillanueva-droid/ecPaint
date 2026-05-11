@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>760</width>
-    <height>751</height>
+    <height>840</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -885,6 +885,12 @@ QToolBar QLabel {
             <width>24</width>
             <height>24</height>
            </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -2106,7 +2112,7 @@ QToolBar QLabel {
     <string>Font Properties</string>
    </property>
    <property name="styleSheet">
-    <string notr="true">margin-left: 2px;margin-right: 1px; padding-left: 3px; padding-right: 3px;</string>
+    <string notr="true"/>
    </property>
    <property name="iconSize">
     <size>
@@ -2115,7 +2121,7 @@ QToolBar QLabel {
     </size>
    </property>
    <attribute name="toolBarArea">
-    <enum>BottomToolBarArea</enum>
+    <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -2125,6 +2131,12 @@ QToolBar QLabel {
    <addaction name="actionUnderline"/>
   </widget>
   <widget class="QToolBar" name="selectionSelectionToolbar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>43</height>
+    </size>
+   </property>
    <property name="visible">
     <bool>true</bool>
    </property>
@@ -2132,50 +2144,10 @@ QToolBar QLabel {
     <string>Selection Tools</string>
    </property>
    <property name="styleSheet">
-    <string notr="true">
-
-            QToolBar {
-
-                background: rgba(255, 255, 255, 0.9);
-
-                border: 1px solid #ced4da;
-
-                border-radius: 8px;
-
-                margin: 10px;
-
-                padding: 5px;
-
-                spacing: 8px;
-
-            }
-
-            QToolButton {
-
-                padding: 6px;
-
-                border-radius: 6px;
-
-            }
-
-            QToolButton:hover {
-
-                background: #f1f3f5;
-
-            }
-
-            QToolButton:checked {
-
-                background: #e7f5ff;
-
-                border: 1px solid #3399FF;
-
-            }
-
-        </string>
+    <string notr="true"/>
    </property>
    <attribute name="toolBarArea">
-    <enum>RightToolBarArea</enum>
+    <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -2185,6 +2157,67 @@ QToolBar QLabel {
    <addaction name="actionSelectPoly"/>
    <addaction name="actionSelectFree"/>
    <addaction name="actionSelectWand"/>
+  </widget>
+  <widget class="QToolBar" name="wandToolbar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>43</height>
+    </size>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Wand Options</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QToolBar" name="polyToolbar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>43</height>
+    </size>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Regular Poly Options</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+  </widget>
+  <widget class="QToolBar" name="smudgeToolbar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>43</height>
+    </size>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Smudge Options</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="separator"/>
   </widget>
   <action name="actionCopy">
    <property name="text">
@@ -2197,6 +2230,9 @@ QToolBar QLabel {
   <action name="actionClearImage">
    <property name="text">
     <string>Clear Image</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear </string>
    </property>
   </action>
   <action name="actionZoomIn">

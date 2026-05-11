@@ -346,6 +346,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.canvas.set_config_multiple({"contour": False, "fill": True})
         
         # self.drawingToolbar.hide()
+        self.actionShowToolProperties.setChecked(False)
         self.actionShowToolProperties.triggered.connect(lambda: self.set_mode(self.canvas.mode))
 
         # Setup background fill buttons group for pasting functionality (Exclusive)
@@ -373,14 +374,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Final cleanup: Hide viewToolbar as requested
         # self.viewToolbar.hide()
 
-        # Setup Magic Wand Toolbar
-        self.wandToolbar = QToolBar("Wand Options")
-        self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.wandToolbar)
-        self.wandToolbar.setObjectName("wandToolbar")
-        
-        # Style for toolbars is now in mainwindow.ui 吹吹
-        
-        self.wandToolbar.addWidget(QLabel("Tolerance: "))
+        # Setup Magic Wand Widgets at Runtime (No Sliders)
         self.toleranceSpin = QSpinBox()
         self.toleranceSpin.setRange(0, 255)
         self.toleranceSpin.setValue(32)
@@ -396,27 +390,87 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 border-color: #80bdff;
             }
         """)
+
+        # Rebuild toolbar to ensure order: Label -> Spin
+        self.wandToolbar.clear()
+        self.labelTolerance = QLabel("Tolerance: ")
+        self.labelTolerance.setStyleSheet("font-weight: bold; color: #495057;")
+        self.wandToolbar.addWidget(self.labelTolerance)
         self.wandToolbar.addWidget(self.toleranceSpin)
+
         self.toleranceSpin.valueChanged.connect(lambda v: self.canvas.set_config("tolerance", v))
+        self.wandToolbar.hide()
 
 
 
-        # Setup Regular Polygon Toolbar
-        self.polyToolbar = QToolBar("Regular Poly Options")
-        self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.polyToolbar)
-        self.polyToolbar.setObjectName("polyToolbar")
-        # Style for toolbars is now in mainwindow.ui 吹吹
-        
-        self.polyToolbar.addWidget(QLabel("Vertices: "))
+        # Setup Poly Widgets at Runtime (No Sliders)
         self.polyVerticesSpin = QSpinBox()
         self.polyVerticesSpin.setRange(3, 100)
         self.polyVerticesSpin.setValue(5)
         self.polyVerticesSpin.setFixedWidth(80)
         self.polyVerticesSpin.setStyleSheet(self.toleranceSpin.styleSheet())
+        
+        # Rebuild toolbar to ensure order: Label -> Spin
+        self.polyToolbar.clear()
+        self.labelVertices = QLabel("Vertices: ")
+        self.labelVertices.setStyleSheet("font-weight: bold; color: #495057;")
+        self.polyToolbar.addWidget(self.labelVertices)
         self.polyToolbar.addWidget(self.polyVerticesSpin)
+        
         self.polyVerticesSpin.valueChanged.connect(lambda v: self.canvas.set_config("poly_vertices", v))
         self.canvas.set_config("poly_vertices", 5)
         self.polyToolbar.hide()
+
+        # Setup Smudge Widgets at Runtime
+        self.smudgeRadiusSlider = QSlider(Qt.Orientation.Horizontal)
+        self.smudgeRadiusSlider.setRange(1, 150)
+        self.smudgeRadiusSlider.setValue(20)
+        self.smudgeRadiusSlider.setFixedWidth(80)
+        # Correct placement in smudgeToolbar:
+        # Currently in UI: [labelSmudgeRadius] [separator] [labelSmudgePressure]
+        # We want: [labelSmudgeRadius] [smudgeRadiusSlider] [smudgeRadiusSpin] [separator] [labelSmudgePressure] [smudgePressureSlider] [smudgePressureSpin]
+        
+        # I'll find the separator index.
+        # Actually, I'll just clear the toolbar and re-add everything? No, user wants labels in UI.
+        
+        # I'll use insertWidget to place them correctly.
+        # For wand and poly, it was easy because there's only one label.
+        
+        # For smudge:
+        self.smudgeRadiusSlider = QSlider(Qt.Orientation.Horizontal)
+        self.smudgeRadiusSlider.setRange(1, 150)
+        self.smudgeRadiusSlider.setValue(20)
+        # Setup Smudge Widgets at Runtime (No Sliders)
+        self.smudgeRadiusSpin = QSpinBox()
+        self.smudgeRadiusSpin.setRange(1, 150)
+        self.smudgeRadiusSpin.setValue(20)
+        self.smudgeRadiusSpin.setFixedWidth(80)
+        self.smudgeRadiusSpin.setStyleSheet(self.toleranceSpin.styleSheet())
+        
+        self.smudgePressureSpin = QSpinBox()
+        self.smudgePressureSpin.setRange(1, 100)
+        self.smudgePressureSpin.setValue(50)
+        self.smudgePressureSpin.setFixedWidth(80)
+        self.smudgePressureSpin.setStyleSheet(self.toleranceSpin.styleSheet())
+
+        # Create labels at runtime
+        self.labelSmudgeRadius = QLabel("Radius: ")
+        self.labelSmudgeRadius.setStyleSheet("font-weight: bold; color: #495057;")
+        self.labelSmudgePressure = QLabel("Pressure: ")
+        self.labelSmudgePressure.setStyleSheet("font-weight: bold; color: #495057;")
+
+        # Rebuild toolbar to ensure order: Label -> Spin -> Separator -> Label -> Spin
+        self.smudgeToolbar.clear()
+        self.smudgeToolbar.addWidget(self.labelSmudgeRadius)
+        self.smudgeToolbar.addWidget(self.smudgeRadiusSpin)
+        self.smudgeToolbar.addSeparator()
+        self.smudgeToolbar.addWidget(self.labelSmudgePressure)
+        self.smudgeToolbar.addWidget(self.smudgePressureSpin)
+        
+        self.smudgeRadiusSpin.valueChanged.connect(lambda v: self.canvas.set_config("smudge_radius", v))
+        self.smudgePressureSpin.valueChanged.connect(lambda v: self.canvas.set_config("smudge_pressure", v))
+        
+        self.smudgeToolbar.hide()
 
         # Selection Tool Grouping Logic - NOW MANAGED VIA UI FILE
         self.last_selection_mode = "selectrect"
@@ -681,7 +735,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             getattr(self, f"{mode}Button").setChecked(True)
 
         # Show/Hide Wand Toolbar
-        if mode == "selectwand":
+        if mode == "selectwand" and self.actionShowToolProperties.isChecked():
             self.wandToolbar.show()
         else:
             self.wandToolbar.hide()
@@ -710,6 +764,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.polyToolbar.show()
         else:
             self.polyToolbar.hide()
+
+        # Show/Hide Smudge Toolbar
+        if mode == "smudge" and self.actionShowToolProperties.isChecked():
+            self.smudgeToolbar.show()
+        else:
+            self.smudgeToolbar.hide()
 
         # Show/Hide Selection Selection Toolbar
         is_selection_mode = "select" in mode
@@ -1077,10 +1137,7 @@ if __name__ == "__main__":
     QMenuBar::item:pressed {
         background-color: rgba(0, 0, 0, 20%);
     }
-    
-    QToolBar QToolButton {
-        padding: 6px;
-    }
+
     """
     app.setStyleSheet(stylesheet)
     
