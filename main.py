@@ -305,6 +305,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.antialiasCheckbox.toggled.connect(lambda checked: self.canvas.set_config("antialias", checked))
         self.antialiasCheckbox.hide()
 
+        # Add "Smooth?" checkbox below Antialias checkbox
+        self.smoothCheckbox = QCheckBox("Smooth?")
+        self.smoothCheckbox.setStyleSheet("font-size: 12px; margin-left: 2px; margin-top: 16px; spacing: 4px;")
+        self.backLayout.insertWidget(self.backLayout.indexOf(self.antialiasCheckbox) + 1, self.smoothCheckbox)
+        self.smoothCheckbox.toggled.connect(lambda checked: self.canvas.set_config("smooth", checked))
+        self.smoothCheckbox.hide()
+
         # Hide arrowButton as it is no longer needed
         # self.arrowButton.hide()
 
@@ -758,6 +765,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.antialiasCheckbox.blockSignals(True)
             self.antialiasCheckbox.setChecked(self.canvas.config.get("antialias", False))
             self.antialiasCheckbox.blockSignals(False)
+
+        # Show/Hide Smooth Checkbox
+        smooth_modes = ["pen", "brush", "marker", "eraser"]
+        is_smooth_tool = mode in smooth_modes
+        self.smoothCheckbox.setVisible(is_smooth_tool)
+        if is_smooth_tool:
+            self.smoothCheckbox.blockSignals(True)
+            self.smoothCheckbox.setChecked(self.canvas.config.get("smooth", False))
+            self.smoothCheckbox.blockSignals(False)
 
         # Show/Hide Regular Poly Toolbar
         if mode == "regularpoly" and self.actionShowToolProperties.isChecked():
