@@ -197,7 +197,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Setup to agree with Canvas.
         self.set_primary_color("#22b14c")
-        self.set_secondary_color("#fff200")
+        self.set_secondary_color("#ffffff")
 
         # Signals for canvas-initiated color changes (dropper).
         self.canvas.primary_color_updated.connect(self.set_primary_color)

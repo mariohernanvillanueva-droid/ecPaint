@@ -2187,6 +2187,7 @@ class Canvas(QLabel):
 
         self._record_snapshot()
         self.last_pos = self._to_image_pixel(e)
+        self.stroke_points = [self.last_pos]
         # Match the Delete tool logic: work on a QImage in ARGB32 format for robust transparency
         self._working_image = self._image_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
         
@@ -2204,7 +2205,7 @@ class Canvas(QLabel):
                 self.smoothed_pos = self.smoothed_pos * (1 - alpha) + QPointF(curr_raw) * alpha
                 curr = self.smoothed_pos.toPoint()
 
-            if curr == self.last_pos:
+            if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
 
             p = QPainter(self._working_image)
@@ -2273,7 +2274,10 @@ class Canvas(QLabel):
                     path.cubicTo(cp1, cp2, p2)
                     p.drawPath(path)
             else:
-                p.drawLine(self.last_pos, curr)
+                if curr == self.last_pos:
+                    p.drawPoint(curr)
+                else:
+                    p.drawLine(self.last_pos, curr)
             p.end()
 
             self.last_pos = curr
@@ -2338,7 +2342,10 @@ class Canvas(QLabel):
                     path.cubicTo(cp1, cp2, p2)
                     p.drawPath(path)
             else:
-                p.drawLine(self.last_pos, curr)
+                if curr == self.last_pos:
+                    p.drawPoint(curr)
+                else:
+                    p.drawLine(self.last_pos, curr)
             p.end()
             
             # Commit the final image
@@ -2578,7 +2585,7 @@ class Canvas(QLabel):
     def pen_mouseMoveEvent(self, e):
         if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
             curr = self._to_image_pixel(e)
-            if curr == self.last_pos:
+            if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
 
             # Draw RAW line for immediate, 0-latency feedback
@@ -2593,7 +2600,10 @@ class Canvas(QLabel):
                     Qt.PenJoinStyle.RoundJoin,
                 )
             )
-            p.drawLine(self.last_pos, curr)
+            if curr == self.last_pos:
+                p.drawPoint(curr)
+            else:
+                p.drawLine(self.last_pos, curr)
             p.end()
 
             self.stroke_points.append(curr)
@@ -2616,34 +2626,72 @@ class Canvas(QLabel):
             return
             
         raw_pts = self.stroke_points
-        if len(raw_pts) < 2:
+        if not raw_pts:
             return
 
-        # 1. Point Thinning / Simplification
-        # This removes the micro-jitter by only keeping points that are significantly apart
+        # Handle single click (tap)
+        if len(raw_pts) == 1:
+            p = QPainter(self._working_image)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            
+            if self.mode == "marker":
+                p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
+                c = QColor(getattr(self, "_marker_color", self.primary_color))
+                c.setAlpha(180)
+                size = self.config["size"]
+                color = c
+            elif self.mode == "brush":
+                size = self.config["size"] * constants.BRUSH_MULT
+                color = self.active_color
+            else: # pen
+                size = self.config["size"]
+                color = self.active_color
+
+            p.setPen(QPen(color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            p.drawPoint(raw_pts[0])
+            p.end()
+            self._image_pixmap = QPixmap.fromImage(self._working_image)
+            self.setPixmap(self._image_pixmap, record=False)
+            self.update()
+            return
+
+        # 1. Point Thinning / Simplification (for strokes with multiple points)
         thinned_pts = [raw_pts[0]]
         for pt in raw_pts[1:]:
             dist = math.hypot(pt.x() - thinned_pts[-1].x(), pt.y() - thinned_pts[-1].y())
-            if dist > 8.0: # Threshold for thinning
+            if dist > 8.0: 
                 thinned_pts.append(pt)
-        
-        # Ensure the final point is included for accuracy
         if len(thinned_pts) < 2 or (raw_pts[-1].x() != thinned_pts[-1].x() or raw_pts[-1].y() != thinned_pts[-1].y()):
             thinned_pts.append(raw_pts[-1])
 
-        # 2. Restore image to pre-stroke state to remove raw lines
+        # 2. Restore image to pre-stroke state
         if hasattr(self, "_stroke_undo_image"):
             self._working_image = self._stroke_undo_image.copy()
         
-        # 3. Build and draw the smooth spline path through the thinned points
+        # 3. Build and draw the smooth spline path
         path = self._catmull_rom_to_path(thinned_pts)
         
         p = QPainter(self._working_image)
         p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        
+        # Configure painter based on tool mode
+        if self.mode == "marker":
+            p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
+            c = QColor(getattr(self, "_marker_color", self.primary_color))
+            c.setAlpha(180)
+            size = self.config["size"]
+            color = c
+        elif self.mode == "brush":
+            size = self.config["size"] * constants.BRUSH_MULT
+            color = self.active_color
+        else: # pen
+            size = self.config["size"]
+            color = self.active_color
+
         p.setPen(
             QPen(
-                self.active_color,
-                self.config["size"],
+                color,
+                size,
                 Qt.PenStyle.SolidLine,
                 Qt.PenCapStyle.RoundCap,
                 Qt.PenJoinStyle.RoundJoin,
@@ -2653,6 +2701,7 @@ class Canvas(QLabel):
         p.end()
         
         self._image_pixmap = QPixmap.fromImage(self._working_image)
+        self.setPixmap(self._image_pixmap, record=False)
         self.update()
 
     def pen_mouseReleaseEvent(self, e):
@@ -2682,23 +2731,13 @@ class Canvas(QLabel):
 
     def brush_mouseMoveEvent(self, e):
         if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
-            curr_raw = self._to_image_pixel(e)
-            curr = curr_raw
-            
-            # Apply EMA smoothing (Stabilizer) if enabled
-            if self.config.get("smooth", False):
-                alpha = 0.1  # Very smooth lag for "soft" feel
-                self.smoothed_pos = self.smoothed_pos * (1 - alpha) + QPointF(curr_raw) * alpha
-                curr = self.smoothed_pos.toPoint()
-
-            if curr == self.last_pos:
+            curr = self._to_image_pixel(e)
+            if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
 
+            # Draw RAW line for immediate feedback
             p = QPainter(self._working_image)
-            # Force Antialiasing for smoothing
-            antialias = self.config.get("antialias", False) or self.config.get("smooth", False)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
-
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
             p.setPen(
                 QPen(
                     self.active_color,
@@ -2708,109 +2747,42 @@ class Canvas(QLabel):
                     Qt.PenJoinStyle.RoundJoin,
                 )
             )
-            
-            if self.config.get("smooth", False) and getattr(self, "stroke_points", None) is not None:
-                # Distance-based point thinning
-                last_recorded = self.stroke_points[-1]
-                dist = math.hypot(curr.x() - last_recorded.x(), curr.y() - last_recorded.y())
-                
-                # Minimum distance for a new spline anchor
-                if dist < 6.0: 
-                    p.end()
-                    return
-
-                self.stroke_points.append(curr)
-                n = len(self.stroke_points)
-                
-                # Catmull-Rom Spline Logic (delayed by 1 point for C1 continuity)
-                if n == 2:
-                    # Initial segment: draw a line from P0 to midpoint of P0-P1
-                    mid = (self.stroke_points[0] + self.stroke_points[1]) / 2.0
-                    p.drawLine(self.stroke_points[0], mid)
-                elif n == 3:
-                    # Second segment: Quadratic Bezier from mid(P0,P1) to mid(P1,P2)
-                    mid01 = (self.stroke_points[0] + self.stroke_points[1]) / 2.0
-                    mid12 = (self.stroke_points[1] + self.stroke_points[2]) / 2.0
-                    path = QPainterPath()
-                    path.moveTo(mid01)
-                    path.quadTo(self.stroke_points[1], mid12)
-                    p.drawPath(path)
-                elif n >= 4:
-                    # Stable Catmull-Rom segment from P[n-3] to P[n-2]
-                    p0 = QPointF(self.stroke_points[-4])
-                    p1 = QPointF(self.stroke_points[-3])
-                    p2 = QPointF(self.stroke_points[-2])
-                    p3 = QPointF(self.stroke_points[-1])
-                    
-                    tension = 0.5
-                    cp1 = p1 + (p2 - p0) * tension / 3.0
-                    cp2 = p2 - (p3 - p1) * tension / 3.0
-                    
-                    path = QPainterPath()
-                    path.moveTo(p1)
-                    path.cubicTo(cp1, cp2, p2)
-                    p.drawPath(path)
+            if curr == self.last_pos:
+                p.drawPoint(curr)
             else:
                 p.drawLine(self.last_pos, curr)
-
-            self.last_pos = curr
             p.end()
+
+            self.stroke_points.append(curr)
+            self.last_pos = curr
+
+            # Start/Reset smoothing timer
+            if self.config.get("smooth", False):
+                if not hasattr(self, "_smooth_timer"):
+                    self._smooth_timer = QTimer()
+                    self._smooth_timer.setSingleShot(True)
+                    self._smooth_timer.timeout.connect(self._finalize_smooth_stroke)
+                self._smooth_timer.start(1000)
+
             self._image_pixmap = QPixmap.fromImage(self._working_image)
             self.update()
 
     def brush_mouseReleaseEvent(self, e):
-        # If the user clicked without moving, draw a single brush point.
-        curr = self._to_image_pixel(e)
-        if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
-            p = QPainter(self._working_image)
-            # Force Antialiasing when smoothing is enabled for "softer" lines
-            antialias = self.config.get("antialias", False) or self.config.get("smooth", False)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
-            p.setPen(
-                QPen(
-                    self.active_color,
-                    self.config["size"] * constants.BRUSH_MULT,
-                    Qt.PenStyle.SolidLine,
-                    Qt.PenCapStyle.RoundCap,
-                    Qt.PenJoinStyle.RoundJoin,
-                )
-            )
-            if abs(self.last_pos.x() - curr.x()) < 1 and abs(self.last_pos.y() - curr.y()) < 1:
-                p.drawPoint(curr)
-            elif self.config.get("smooth", False) and getattr(self, "stroke_points", None) is not None:
-                if curr != self.stroke_points[-1]:
-                    self.stroke_points.append(curr)
-                
-                n = len(self.stroke_points)
-                if n == 2:
-                    p.drawLine(self.stroke_points[0], self.stroke_points[1])
-                elif n == 3:
-                    # Finish the curve from mid(P0,P1) to P2
-                    mid01 = (self.stroke_points[0] + self.stroke_points[1]) / 2.0
-                    path = QPainterPath()
-                    path.moveTo(mid01)
-                    path.quadTo(self.stroke_points[1], self.stroke_points[2])
-                    p.drawPath(path)
-                elif n >= 4:
-                    # Final segment from P[n-2] to P[n-1]
-                    p0 = QPointF(self.stroke_points[-3])
-                    p1 = QPointF(self.stroke_points[-2])
-                    p2 = QPointF(self.stroke_points[-1])
-                    p3 = p2
-                    tension = 0.5
-                    cp1 = p1 + (p2 - p0) * tension / 3.0
-                    cp2 = p2 - (p3 - p1) * tension / 3.0
-                    path = QPainterPath()
-                    path.moveTo(p1)
-                    path.cubicTo(cp1, cp2, p2)
-                    p.drawPath(path)
-            else:
-                p.drawLine(self.last_pos, curr)
-
-            p.end()
-            self._image_pixmap = QPixmap.fromImage(self._working_image)
-            self.setPixmap(self._image_pixmap, record=False)
-
+        # Finalize smoothing if active
+        if self.config.get("smooth", False):
+            if hasattr(self, "_smooth_timer"):
+                self._smooth_timer.stop()
+            self._finalize_smooth_stroke()
+        else:
+            # Standard behavior
+            curr = self._to_image_pixel(e)
+            if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
+                p = QPainter(self._working_image)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
+                if abs(self.last_pos.x() - curr.x()) < 1 and abs(self.last_pos.y() - curr.y()) < 1:
+                    p.drawPoint(curr)
+                p.end()
+        
         self.generic_mouseReleaseEvent(e)
 
     # Smudge events
@@ -3129,95 +3101,71 @@ class Canvas(QLabel):
 
     def marker_mouseMoveEvent(self, e):
         if hasattr(self, "stroke_path") and getattr(self, "_working_image", None) is not None:
-            curr_raw = self._to_image_pixel(e)
-            curr = curr_raw
-            
-            # Apply EMA smoothing (Stabilizer) if enabled
-            if self.config.get("smooth", False):
-                alpha = 0.12  # Stronger smoothing factor
-                self.smoothed_pos = self.smoothed_pos * (1 - alpha) + QPointF(curr_raw) * alpha
-                curr = self.smoothed_pos.toPoint()
-
-            if curr == self.last_pos:
+            curr = self._to_image_pixel(e)
+            if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
             
+            # Record point and update raw path
+            self.stroke_points.append(curr)
+            self.stroke_path.lineTo(curr)
             self.last_pos = curr
 
-            if self.config.get("smooth", False) and getattr(self, "stroke_points", None) is not None:
-                # Distance-based point thinning
-                last_recorded = self.stroke_points[-1]
-                dist = math.hypot(curr.x() - last_recorded.x(), curr.y() - last_recorded.y())
-                
-                if dist < 4.0: 
-                    return
+            # Start/Reset smoothing timer
+            if self.config.get("smooth", False):
+                if not hasattr(self, "_smooth_timer"):
+                    self._smooth_timer = QTimer()
+                    self._smooth_timer.setSingleShot(True)
+                    self._smooth_timer.timeout.connect(self._finalize_smooth_stroke)
+                self._smooth_timer.start(1000)
 
-                self.stroke_points.append(curr)
-                # Rebuild smooth path using midpoints and quadratic Bezier curves
-                path = QPainterPath()
-                n = len(self.stroke_points)
-                if n >= 1:
-                    path.moveTo(self.stroke_points[0])
-                if n == 2:
-                    path.lineTo(self.stroke_points[1])
-                elif n >= 3:
-                    # Line to first midpoint
-                    path.lineTo((self.stroke_points[0] + self.stroke_points[1]) / 2.0)
-                    # Quadratic curves through midpoints
-                    for i in range(1, n - 1):
-                        p_p1 = self.stroke_points[i]
-                        p_c = self.stroke_points[i+1]
-                        mid_c = (p_p1 + p_c) / 2.0
-                        path.quadTo(p_p1, mid_c)
-                    # Final line to end
-                    path.lineTo(self.stroke_points[-1])
-                self.stroke_path = path
-            else:
-                self.stroke_path.lineTo(curr)
-            
-            # Start from a fresh copy to maintain uniform transparency
+            # Draw the RAW path to a display copy for immediate feedback
             display_img = self._working_image.copy()
             p = QPainter(display_img)
-            # Force Antialiasing when smoothing is enabled for "softer" marker lines
-            antialias = self.config.get("antialias", False) or self.config.get("smooth", False)
-            p.setRenderHint(QPainter.Antialiasing, antialias)
-            
-            # MULTIPLY mode makes light areas take the color while keeping black text sharp
+            p.setRenderHint(QPainter.Antialiasing, self.config.get("antialias", False))
             p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
             
             c = QColor(getattr(self, "_marker_color", self.primary_color))
-            # For Multiply, we want a vibrant color. 
-            # We use a high alpha because Multiply naturally blends.
-            c.setAlpha(180) 
-            
+            c.setAlpha(180)
             p.setPen(
                 QPen(
                     c,
-                    self.config["size"] * constants.BRUSH_MULT,
+                    self.config["size"],
                     Qt.PenStyle.SolidLine,
                     Qt.PenCapStyle.RoundCap,
                     Qt.PenJoinStyle.RoundJoin,
                 )
             )
-            p.drawPath(self.stroke_path)
+            if len(self.stroke_points) == 1:
+                p.drawPoint(curr)
+            else:
+                p.drawPath(self.stroke_path)
             p.end()
             
             self._image_pixmap = QPixmap.fromImage(display_img)
             self.update()
 
     def marker_mouseReleaseEvent(self, e):
-        # Commit the FINAL uniform path to the base pixmap using Multiply mode
-        if hasattr(self, "stroke_path") and getattr(self, "_working_image", None) is not None:
+        # Finalize smoothing if active
+        if self.config.get("smooth", False):
+            if hasattr(self, "_smooth_timer"):
+                self._smooth_timer.stop()
+            self._finalize_smooth_stroke()
+        elif hasattr(self, "stroke_path") and getattr(self, "_working_image", None) is not None:
+             # Standard non-smooth commit
              p = QPainter(self._working_image)
-             # Force Antialiasing when smoothing is enabled for "softer" lines
-             antialias = self.config.get("antialias", False) or self.config.get("smooth", False)
-             p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+             p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
              p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
              c = QColor(getattr(self, "_marker_color", self.primary_color))
              c.setAlpha(180)
-             p.setPen(QPen(c, self.config["size"] * constants.BRUSH_MULT, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-             p.drawPath(self.stroke_path)
+             p.setPen(QPen(c, self.config["size"], Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+             if len(self.stroke_points) == 1:
+                 p.drawPoint(self.stroke_points[0])
+             else:
+                 p.drawPath(self.stroke_path)
              p.end()
-             self.setPixmap(QPixmap.fromImage(self._working_image), record=False)
+             self._image_pixmap = QPixmap.fromImage(self._working_image)
+             self.setPixmap(self._image_pixmap, record=False)
+             
         self._marker_color = None
         self.generic_mouseReleaseEvent(e)
 
