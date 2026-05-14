@@ -277,7 +277,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # Setup the existing stroke size UI from the .ui file (bottom toolbar)
-        self.stroke_values = [1, 4, 8, 12, 16, 20]
+        self.stroke_values = [1, 4, 8, 16, 32, 64, 96, 128]
         self.strokesize.setRange(0, len(self.stroke_values) - 1)
         self.strokesize.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.strokesize.setTickInterval(1)
@@ -287,7 +287,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.canvas.set_config("size", size)
             # 'label' is the name of the QLabel next to 'strokesize' in the bottom widget_2
             self.label.setText(f"Stroke: {size}")
-            # self.label.setStyleSheet("font-weight: bold;")
+            
+            # If smudge tool is selected, sync stroke size to smudge radius
+            if self.canvas.mode == "smudge" and hasattr(self, "smudgeRadiusSpin"):
+                self.smudgeRadiusSpin.setValue(size)
 
         self.strokesize.valueChanged.connect(update_stroke)
         
@@ -316,8 +319,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.arrowButton.hide()
 
         # Initial state
-        self.strokesize.setValue(1) # Default to 12
-        update_stroke(1)
+        self.strokesize.setValue(3) # Default to 16
+        update_stroke(3)
 
         # Setup shape mode group (exclusive)
         self.shape_mode_group = QActionGroup(self)
@@ -731,6 +734,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.secondaryButton.setStyleSheet("QPushButton { background-color: %s; }" % self.canvas.secondary_color.name())
 
         self.canvas.set_mode(mode)
+
+        # Sync current stroke size to smudge radius when selecting the tool
+        if mode == "smudge" and hasattr(self, "smudgeRadiusSpin"):
+            size = self.stroke_values[self.strokesize.value()]
+            self.smudgeRadiusSpin.setValue(size)
 
         # Update Tool Button Selection State
         if "select" in mode:
