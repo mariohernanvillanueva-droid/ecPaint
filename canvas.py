@@ -19,6 +19,7 @@ from PySide6.QtGui import (
     QPolygon,
     QPolygonF,
     QRegion,
+    QTransform,
 )
 from PySide6.QtWidgets import QLabel, QApplication
 from utils import build_font
@@ -116,6 +117,9 @@ class Canvas(QLabel):
         self.is_rotating_shape = False
         self.shape_rotation = 0
         self.moving_rect = None
+        self.selection_resizing = ""
+        self.selection_resize_origin = None
+        self.selection_resize_start_pos = None
         
         self.rotation_icon = QPixmap(":/icons/circlearrow.png")
         
@@ -576,6 +580,14 @@ class Canvas(QLabel):
 
         p = QPainter(img)
         p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        
+        # Apply rotation transform to the painter if the selection is rotated
+        rotation = getattr(self, "shape_rotation", 0)
+        if rotation != 0 and getattr(self, "moving_rect", None):
+            pivot = self._rotation_pivot()
+            p.translate(pivot.x(), pivot.y())
+            p.rotate(rotation)
+            p.translate(-pivot.x(), -pivot.y())
 
         # Decide whether to clear based on the active shape type, not the current tool mode.
         # This allows a polygon selection to be cleared correctly even if the Rectangle tool is active.
@@ -701,7 +713,16 @@ class Canvas(QLabel):
         self.setPixmap(QPixmap.fromImage(img), record=True)
 
     def copy_selection(self):
-        """Unified helper to copy pixels based on the active selection type (Rect, Poly, or Path)."""
+        """Unified helper to copy pixels based on the active selection type (Rect, Poly, or Path).
+        
+        If shape_rotation != 0, the extracted content is rotated so the returned pixmap
+        contains the selection pixels correctly oriented.
+        """
+        rotation = getattr(self, "shape_rotation", 0)
+        
+        if rotation != 0:
+            return self._copy_selection_rotated(rotation)
+        
         if self.active_shape_fn == "drawPath":
             return self.selectwand_copy()
         elif self.active_shape_fn in ["drawPolygon", "drawPolyline"]:
@@ -710,6 +731,48 @@ class Canvas(QLabel):
             return self.selectellipse_copy()
         else:
             return self.selectrect_copy()
+
+    def _copy_selection_rotated(self, rotation):
+        """Extract the rotated selection region and return its pixels un-rotated (axis-aligned)."""
+        if not getattr(self, "moving_rect", None):
+            return QPixmap()
+        
+        pivot = self._rotation_pivot()
+        src_img = self._image_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+        
+        # Build the selection path in unrotated space
+        base_path = QPainterPath()
+        if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+            base_path = QPainterPath(self.painter_path)
+        elif self.active_shape_fn == "drawEllipse" and self.moving_rect:
+            base_path.addEllipse(QRectF(self.moving_rect))
+        else:
+            base_path.addRect(QRectF(self.moving_rect))
+        
+        # Rotate the path by shape_rotation to get the actual selected region
+        rot_transform = QTransform()
+        rot_transform.translate(pivot.x(), pivot.y())
+        rot_transform.rotate(rotation)
+        rot_transform.translate(-pivot.x(), -pivot.y())
+        rotated_path = rot_transform.map(base_path)
+        
+        brect = rotated_path.boundingRect().toRect()
+        if brect.isEmpty():
+            return QPixmap()
+        
+        # Create transparent target sized to the rotated bounding box
+        target = QImage(brect.width(), brect.height(), QImage.Format.Format_ARGB32)
+        target.fill(QColor(0, 0, 0, 0))
+        
+        local_path = rotated_path.translated(-brect.x(), -brect.y())
+        
+        p = QPainter(target)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        p.setClipPath(local_path)
+        p.drawImage(0, 0, src_img, brect.x(), brect.y(), brect.width(), brect.height())
+        p.end()
+        
+        return QPixmap.fromImage(target)
 
     def _union_selection(self, new_path):
         """Unions a new QPainterPath into the current selection state."""
@@ -736,6 +799,18 @@ class Canvas(QLabel):
         """Unified precise hit detection for both rectangular and polygonal selections."""
         # Ensure we work with QPointF for QPainterPath precision
         pf = QPointF(pos) if not isinstance(pos, QPointF) else pos
+        
+        # If the selection is rotated, un-rotate the test point around the pivot
+        rotation = getattr(self, "shape_rotation", 0)
+        if rotation != 0 and getattr(self, "moving_rect", None):
+            pivot = self._rotation_pivot()
+            rot_rad = math.radians(-rotation)  # inverse rotation
+            dx = pf.x() - pivot.x()
+            dy = pf.y() - pivot.y()
+            rx = dx * math.cos(rot_rad) - dy * math.sin(rot_rad)
+            ry = dx * math.sin(rot_rad) + dy * math.cos(rot_rad)
+            pf = QPointF(pivot.x() + rx, pivot.y() + ry)
+            pos = pf.toPoint()
 
         if self.active_shape_fn in ["drawPolygon", "drawPolyline"] and getattr(self, "history_pos", None):
             poly = QPolygon([pt.toPoint() if hasattr(pt, "toPoint") else pt for pt in self.history_pos])
@@ -831,12 +906,12 @@ class Canvas(QLabel):
         # If a paste preview is active, commit it (draw pasted pixmap onto base)
         if getattr(self, "paste_base", None) is not None and getattr(self, "current_stamp", None) is not None:
             try:
-                cp = self.current_pos if self.current_pos is not None else QPoint(
-                    self._image_pixmap.width() // 2, self._image_pixmap.height() // 2
+                cp = self.current_pos if self.current_pos is not None else QPointF(
+                    self._image_pixmap.width() / 2.0, self._image_pixmap.height() / 2.0
                 )
                 if hasattr(cp, "toPoint"):
-                    cp = cp.toPoint()
-                top_left = QPoint(cp.x() - self.current_stamp.width() // 2, cp.y() - self.current_stamp.height() // 2)
+                    cp = QPointF(cp)
+                top_left = QPointF(cp.x() - self.current_stamp.width() / 2.0, cp.y() - self.current_stamp.height() / 2.0)
                 base = self.paste_base
                 p = QPainter(base)
                 p.drawPixmap(top_left, self.current_stamp)
@@ -868,6 +943,8 @@ class Canvas(QLabel):
                 self.active_shape_fn = "drawPath"
                 self.original_painter_path = QPainterPath(self.painter_path)
                 self.poly_orig_tl = self.moving_rect.topLeft()
+            # Preserve shape_rotation across selection tool switches
+            # (do NOT reset it here — it is reset in the non-preserving branch above)
         else:
             # Not preserving: force-clear all selection/path state immediately
             # This is redundant with reset block below but ensures no leakage during finalize_operation
@@ -969,11 +1046,30 @@ class Canvas(QLabel):
 
     # Mouse events.
 
+    def _lift_selection_if_needed(self):
+        """If a selection hasn't been moved yet, extract its contents and transition to paste mode so it can be resized/rotated."""
+        SELECTION_MODES = {"selectrect", "selectellipse", "selectpoly", "selectfree", "selectwand"}
+        if self.mode in SELECTION_MODES and getattr(self, "selectionActive", False) and getattr(self, "moving_rect", None):
+            pix = self.copy_selection()
+            center = QRectF(self.moving_rect).center()
+            pre_move_pixmap = self.pixmap().copy()
+            self._clear_selection_area()
+            
+            # Transition to paste mode centered at its current location
+            self.start_paste(pix, initial_pos=center, immediate_drag=False, original_base=pre_move_pixmap)
+
     def mousePressEvent(self, e):
         # Always grab mouse on press to ensure move/release are received
         # regardless of whether the cursor stays within the widget bounds.
         self.grabMouse()
         self.setFocus()
+        
+        # Selection anchor-resize has priority
+        sel_hit = self._selection_anchor_hit(self._event_widget_pos(e))
+        if sel_hit:
+            self._lift_selection_if_needed()
+            return self._start_selection_anchor_resize(e, sel_hit)
+
         # Anchor-resize has priority over tool handlers.
         hit = self._anchor_hit(self._event_widget_pos(e))
         if hit:
@@ -987,6 +1083,7 @@ class Canvas(QLabel):
         # Rotation handle check
         handle_rect = self._get_rotation_handle_rect()
         if handle_rect and handle_rect.contains(self._event_widget_pos(e)):
+            self._lift_selection_if_needed()
             self.is_rotating_shape = True
             center = self._rotation_pivot()
             mouse_pos = self._to_image_pos(e)
@@ -1017,14 +1114,27 @@ class Canvas(QLabel):
              return
 
         # If resizing, handle updates here
+        if getattr(self, "selection_resizing", False):
+            return self._update_selection_anchor_resize(e)
+
         if getattr(self, "resizing", False):
             return self._update_anchor_resize(e)
 
         # Update cursor if hovering anchor
+        sel_hit = self._selection_anchor_hit(self._event_widget_pos(e))
         hit = self._anchor_hit(self._event_widget_pos(e))
         handle_rect = self._get_rotation_handle_rect()
         
-        if hit:
+        if sel_hit:
+            if sel_hit in ["top_center", "bottom_center"]:
+                self.setCursor(Qt.SizeVerCursor)
+            elif sel_hit in ["middle_left", "middle_right"]:
+                self.setCursor(Qt.SizeHorCursor)
+            elif sel_hit in ["top_left", "bottom_right"]:
+                self.setCursor(Qt.SizeFDiagCursor)
+            elif sel_hit in ["top_right", "bottom_left"]:
+                self.setCursor(Qt.SizeBDiagCursor)
+        elif hit:
             if hit == "bottom_center":
                 self.setCursor(Qt.SizeVerCursor)
             elif hit == "right_center":
@@ -1084,6 +1194,9 @@ class Canvas(QLabel):
              return
 
         # If resizing, commit
+        if getattr(self, "selection_resizing", False):
+            return self._end_selection_anchor_resize(e)
+
         if getattr(self, "resizing", False):
             return self._end_anchor_resize(e)
 
@@ -1352,9 +1465,7 @@ class Canvas(QLabel):
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
                     pix = self.copy_selection()
-                    center = self.moving_rect.center()
-                    if hasattr(center, "toPoint"):
-                         center = center.toPoint()
+                    center = QRectF(self.moving_rect).center()
                     
                     pre_move_pixmap = self.pixmap().copy()
                     self._clear_selection_area()
@@ -1472,9 +1583,7 @@ class Canvas(QLabel):
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT — same as selectpoly
                     pix = self.copy_selection()
-                    center = self.moving_rect.center()
-                    if hasattr(center, "toPoint"):
-                        center = center.toPoint()
+                    center = QRectF(self.moving_rect).center()
                     pre_move_pixmap = self._image_pixmap.copy()
                     self._clear_selection_area()
                     offset = QPoint(pos.x() - center.x(), pos.y() - center.y())
@@ -1596,7 +1705,7 @@ class Canvas(QLabel):
                     pix = self.copy_selection()
                     # Calculate center of path's bounding box
                     brect = self.painter_path.boundingRect()
-                    center = brect.center().toPoint()
+                    center = brect.center()
                     
                     pre_move_pixmap = self.pixmap().copy()
                     self._clear_selection_area()
@@ -1829,9 +1938,7 @@ class Canvas(QLabel):
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
                     pix = self.copy_selection()
-                    center = self.moving_rect.center()
-                    if hasattr(center, "toPoint"):
-                         center = center.toPoint()
+                    center = QRectF(self.moving_rect).center()
                     
                     pre_move_pixmap = self.pixmap().copy()
                     self._clear_selection_area()
@@ -1923,9 +2030,7 @@ class Canvas(QLabel):
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
                     pix = self.copy_selection()
-                    center = self.moving_rect.center()
-                    if hasattr(center, "toPoint"):
-                         center = center.toPoint()
+                    center = QRectF(self.moving_rect).center()
                     
                     pre_move_pixmap = self.pixmap().copy()
                     self._clear_selection_area()
@@ -2304,6 +2409,13 @@ class Canvas(QLabel):
 
     # Paste (clipboard) preview/placement
     def start_paste(self, pixmap, initial_pos=None, immediate_drag=False, drag_offset=None, original_base=None):
+        # Save selection geometry before start_paste wipes it via finalize_operation
+        saved_path = QPainterPath(self.painter_path) if getattr(self, "painter_path", None) else None
+        saved_history = list(self.history_pos) if getattr(self, "history_pos", None) else None
+        saved_poly_orig = list(self.poly_original_points) if getattr(self, "poly_original_points", None) else None
+        saved_poly_tl = QPoint(self.poly_orig_tl) if getattr(self, "poly_orig_tl", None) else None
+        saved_fn = getattr(self, "active_shape_fn", None)
+        
         # Commit any existing selection, shape, or paste before starting a new one
         self.finalize_operation()
 
@@ -2336,6 +2448,20 @@ class Canvas(QLabel):
         self.original_base = original_base
         self.paste_base = self.pixmap().copy()
         
+        # Restore selection geometry into paste mode
+        if saved_path:
+            self.painter_path = saved_path
+            self.original_painter_path = QPainterPath(saved_path)
+        if saved_history:
+            self.history_pos = saved_history
+            self._original_history_pos = list(saved_history)
+        if saved_poly_orig:
+            self.poly_original_points = saved_poly_orig
+        if saved_poly_tl:
+            self.poly_orig_tl = saved_poly_tl
+        if saved_fn:
+            self.active_shape_fn = saved_fn
+            
         self.dash_offset = 0
         from PySide6.QtGui import QPen
         self.preview_pen = QPen(constants.SELECTION_PEN)
@@ -2344,14 +2470,14 @@ class Canvas(QLabel):
         self._dragged_during_session = False
 
         if initial_pos:
-            self.current_pos = initial_pos
+            self.current_pos = QPointF(initial_pos)
         elif did_auto_resize:
             # Position at (0,0) top-left of the canvas
-            self.current_pos = QPoint(img_w // 2, img_h // 2)
+            self.current_pos = QPointF(img_w / 2.0, img_h / 2.0)
         else:
             # Default to center of the visible area or canvas
             w, h = self._image_pixmap.width(), self._image_pixmap.height()
-            cx, cy = w // 2, h // 2
+            cx, cy = w / 2.0, h / 2.0
 
             scroll_area = self._find_scroll_area()
             if scroll_area is not None:
@@ -2368,20 +2494,22 @@ class Canvas(QLabel):
                 vis_right = min(vis_left + vp.width(), canvas_dw)
                 vis_bottom = min(vis_top + vp.height(), canvas_dh)
                 
-                cx = int((vis_left + vis_right) / 2 / s)
-                cy = int((vis_top + vis_bottom) / 2 / s)
+                cx = (vis_left + vis_right) / 2.0 / s
+                cy = (vis_top + vis_bottom) / 2.0 / s
 
-            self.current_pos = QPoint(cx, cy)
+            self.current_pos = QPointF(cx, cy)
 
         # Initialize tracking rect for movement and selection hit-testing
         sw, sh = self.current_stamp.width(), self.current_stamp.height()
-        self.moving_rect = QRect(self.current_pos.x() - sw // 2, self.current_pos.y() - sh // 2, sw, sh)
+        left = self.current_pos.x() - sw / 2.0
+        top = self.current_pos.y() - sh / 2.0
+        self.moving_rect = QRect(int(left), int(top), sw, sh)
         self._press_pos = initial_pos if initial_pos else self.current_pos
         
         # Capture original state to synchronize selection bounds ("ants") during movement
         self._original_history_pos = list(self.history_pos) if getattr(self, "history_pos", None) else None
         self._original_moving_rect = QRect(self.moving_rect) if getattr(self, "moving_rect", None) else None
-        self._original_current_pos = QPoint(self.current_pos)
+        self._original_current_pos = QPointF(self.current_pos)
         
         self._drag_offset = drag_offset if drag_offset else QPoint(0, 0)
         self.update()
@@ -2391,12 +2519,19 @@ class Canvas(QLabel):
             return
 
         if final:
-            cp = self.current_pos if self.current_pos is not None else QPoint(
-                self._image_pixmap.width() // 2, self._image_pixmap.height() // 2
+            cp = self.current_pos if self.current_pos is not None else QPointF(
+                self._image_pixmap.width() / 2.0, self._image_pixmap.height() / 2.0
             )
-            top_left = QPoint(cp.x() - self.current_stamp.width() // 2, cp.y() - self.current_stamp.height() // 2)
+            top_left = QPointF(cp.x() - self.current_stamp.width() / 2.0, cp.y() - self.current_stamp.height() / 2.0)
             base = self.paste_base
             p = QPainter(base)
+            
+            rotation = getattr(self, "shape_rotation", 0)
+            if rotation != 0:
+                p.translate(cp.x(), cp.y())
+                p.rotate(rotation)
+                p.translate(-cp.x(), -cp.y())
+                
             p.drawPixmap(top_left, self.current_stamp)
             p.end()
             self.setPixmap(base)
@@ -2413,25 +2548,27 @@ class Canvas(QLabel):
 
     def paste_mouseMoveEvent(self, e):
         if getattr(self, "is_dragging", False):
-            # Use explicit subtraction for QPoint compatibility
+            # Use explicit subtraction via QPointF to avoid PySide6 QPoint.operator- bug
             pos = self._to_image_pixel(e)
             
             # Detect significant movement to distinguish drag from simple click
             if not getattr(self, "_dragged_during_session", False):
                 if getattr(self, "_press_pos", None):
-                    diff = pos - self._press_pos
+                    diff = QPointF(pos) - QPointF(self._press_pos)
                     if abs(diff.x()) > 2 or abs(diff.y()) > 2:
                         self._dragged_during_session = True
             
-            self.current_pos = QPoint(pos.x() - self._drag_offset.x(), pos.y() - self._drag_offset.y())
+            self.current_pos = QPointF(pos.x() - self._drag_offset.x(), pos.y() - self._drag_offset.y())
             
             # Synchronize selection boundary ("ants") and hit-test box with the moved content
             diff = self.current_pos - getattr(self, "_original_current_pos", self.current_pos)
             if getattr(self, "_original_history_pos", None):
-                self.history_pos = [p + diff for p in self._original_history_pos]
+                self.history_pos = [QPointF(p.x() + diff.x(), p.y() + diff.y()) for p in self._original_history_pos]
             if getattr(self, "_original_moving_rect", None):
                 # Ensure we use a copy of the original rect to prevent cumulative translation drift
-                self.moving_rect = self._original_moving_rect.translated(diff)
+                self.moving_rect = self._original_moving_rect.translated(int(diff.x()), int(diff.y()))
+            if getattr(self, "original_painter_path", None):
+                self.painter_path = self.original_painter_path.translated(diff.x(), diff.y())
             
             if self.moving_rect:
                 self.selection_dimensions_changed.emit(self.moving_rect.width(), self.moving_rect.height())
@@ -3111,8 +3248,7 @@ class Canvas(QLabel):
             pos = self._to_image_pixel(e)
             if self._is_selection_hit(pos):
                 self.is_dragging_shape = True
-                tl = self.moving_rect.topLeft()
-                self._drag_offset = QPoint(pos.x() - tl.x(), pos.y() - tl.y())
+                self._prev_move_pos = pos  # delta-based: remember press position
             elif e.button() == Qt.MouseButton.LeftButton:
                 # CLICK OUTSIDE: Commit current shape
                 self.generic_shape_mouseDoubleClickEvent(e)
@@ -3155,9 +3291,12 @@ class Canvas(QLabel):
         self.current_pos = pos
         if self.is_moving_shape:
             if self.is_dragging_shape:
-                pos = self.current_pos
-                new_top_left = QPoint(pos.x() - self._drag_offset.x(), pos.y() - self._drag_offset.y())
-                self.moving_rect.moveTo(new_top_left)
+                prev = getattr(self, "_prev_move_pos", None)
+                if prev is not None:
+                    dx = pos.x() - prev.x()
+                    dy = pos.y() - prev.y()
+                    self.moving_rect.translate(dx, dy)
+                self._prev_move_pos = pos
                 # Ensure the last_pos is updated to prevent any stale checks
                 self.last_pos = self.current_pos
                 self._draw_generic_shape_moving_preview()
@@ -3176,6 +3315,7 @@ class Canvas(QLabel):
     def generic_shape_mouseReleaseEvent(self, e):
         if self.is_moving_shape:
             self.is_dragging_shape = False
+            self._prev_move_pos = None  # clear delta baseline
             return
 
         self.current_pos = self._get_constrained_pos(self.origin_pos, self._to_image_pixel(e), e.modifiers())
@@ -3324,11 +3464,11 @@ class Canvas(QLabel):
                 self.reset_mode()
                 return
 
-            pos = self._to_image_pos(e)
+            pos = self._to_image_pixel(e)
             # Use unified hit detection for precise contour check
-            if self._is_selection_hit(self._to_image_pixel(e)):
+            if self._is_selection_hit(pos):
                 self.is_dragging_shape = True
-                self._drag_offset = pos - self.moving_rect.topLeft()
+                self._prev_move_pos = pos  # delta-based: remember press position
             elif e.button() == Qt.MouseButton.LeftButton:
                 # CLICK OUTSIDE: Commit current polygon
                 self.generic_poly_mouseDoubleClickEvent(e)
@@ -3363,6 +3503,7 @@ class Canvas(QLabel):
     def generic_poly_mouseReleaseEvent(self, e):
         if self.is_moving_shape:
             self.is_dragging_shape = False
+            self._prev_move_pos = None  # clear delta baseline
             return
             
         # Explicitly re-grab mouse to ensure hover tracking works off-canvas
@@ -3400,24 +3541,36 @@ class Canvas(QLabel):
         self.current_pos = pos
         if self.is_moving_shape:
             if self.is_dragging_shape:
-                pos = self.current_pos
-                new_top_left = QPoint(pos.x() - self._drag_offset.x(), pos.y() - self._drag_offset.y())
-                
-                # Update moving_rect
-                self.moving_rect.moveTo(new_top_left)
-                
-                # Translate original points and path to current position
-                if getattr(self, "poly_orig_tl", None):
-                    # explicit subtraction for offset to avoid operator bug
-                    offset_x = new_top_left.x() - self.poly_orig_tl.x()
-                    offset_y = new_top_left.y() - self.poly_orig_tl.y()
+                prev = getattr(self, "_prev_move_pos", None)
+                if prev is not None:
+                    dx = pos.x() - prev.x()
+                    dy = pos.y() - prev.y()
                     
-                    if getattr(self, "poly_original_points", None):
-                        self.history_pos = [QPoint(int(p.x() + offset_x), int(p.y() + offset_y)) for p in self.poly_original_points]
+                    # Translate the bounding rect
+                    self.moving_rect.translate(dx, dy)
                     
-                    if getattr(self, "original_painter_path", None):
-                        self.painter_path = self.original_painter_path.translated(offset_x, offset_y)
+                    # Translate history points incrementally
+                    if getattr(self, "history_pos", None):
+                        self.history_pos = [QPoint(p.x() + dx, p.y() + dy) for p in self.history_pos]
+                        # Keep originals in sync so resize still works correctly
+                        if getattr(self, "poly_original_points", None):
+                            self.poly_original_points = list(self.history_pos)
+                    
+                    # Translate path incrementally
+                    if getattr(self, "painter_path", None):
+                        self.painter_path.translate(dx, dy)
+                        if getattr(self, "original_painter_path", None):
+                            self.original_painter_path = QPainterPath(self.painter_path)
+                    
+                    # Translate ants path
+                    if getattr(self, "ants_path", None):
+                        self.ants_path.translate(dx, dy)
+                    
+                    # Keep poly_orig_tl in sync
+                    if getattr(self, "poly_orig_tl", None):
+                        self.poly_orig_tl = self.moving_rect.topLeft()
                 
+                self._prev_move_pos = pos
                 # Update last_pos/current_pos to keep timer active and synced
                 self.last_pos = self.current_pos
                 self._draw_generic_poly_moving_preview()
@@ -3562,6 +3715,217 @@ class Canvas(QLabel):
         self.canvas_dimensions_changed.emit(new_w, new_h)
         self._update_display()
 
+    def _selection_anchor_rects_display(self):
+        """Return display-space QRectF for each selection anchor box."""
+        if not self.moving_rect:
+            return {}
+        
+        # Show handles if selection is active, OR we are in paste mode, OR a shape is being moved/adjusted
+        show_handles = (
+            getattr(self, "selectionActive", False) or 
+            self.mode == "paste" or 
+            getattr(self, "is_moving_shape", False)
+        )
+        
+        if not show_handles:
+            return {}
+        
+        s = getattr(self, "scale", 1.0)
+        # Use QRectF for floating point precision during scaling
+        rect = QRectF(
+            self.moving_rect.left() * s,
+            self.moving_rect.top() * s,
+            self.moving_rect.width() * s,
+            self.moving_rect.height() * s
+        )
+        
+        size = 8
+        half = size / 2
+        
+        points = {
+            "top_left": QPointF(rect.left(), rect.top()),
+            "top_center": QPointF(rect.center().x(), rect.top()),
+            "top_right": QPointF(rect.right(), rect.top()),
+            "middle_left": QPointF(rect.left(), rect.center().y()),
+            "middle_right": QPointF(rect.right(), rect.center().y()),
+            "bottom_left": QPointF(rect.left(), rect.bottom()),
+            "bottom_center": QPointF(rect.center().x(), rect.bottom()),
+            "bottom_right": QPointF(rect.right(), rect.bottom()),
+        }
+        
+        rotation = getattr(self, "shape_rotation", 0)
+        if rotation != 0:
+            pivot = QPointF(self.moving_rect.center().x() * s, self.moving_rect.center().y() * s)
+            transform = QTransform()
+            transform.translate(pivot.x(), pivot.y())
+            transform.rotate(rotation)
+            transform.translate(-pivot.x(), -pivot.y())
+            for name, pt in points.items():
+                points[name] = transform.map(pt)
+                
+        return {name: QRectF(pt.x() - half, pt.y() - half, size, size) for name, pt in points.items()}
+
+    def _selection_anchor_hit(self, pos):
+        """Check if the mouse is over any selection resize handle."""
+        rects = self._selection_anchor_rects_display()
+        for name, r in rects.items():
+            if r.contains(pos):
+                return name
+        return None
+
+    def _start_selection_anchor_resize(self, e, hit):
+        self.selection_resizing = hit
+        self.selection_resize_origin = QRectF(self.moving_rect)
+        self.selection_resize_start_pos = self._to_image_pos(e)
+        
+        # Store original geometry for precision during live resizing
+        self._selection_resize_orig_path = QPainterPath(self.painter_path) if getattr(self, "painter_path", None) else None
+        self._selection_resize_orig_history = list(self.history_pos) if getattr(self, "history_pos", None) else None
+        self._selection_resize_orig_poly = list(self.poly_original_points) if getattr(self, "poly_original_points", None) else None
+        
+        self.grabMouse()
+        self.update()
+
+    def _update_selection_anchor_resize(self, e):
+        if not self.selection_resizing:
+            return
+
+        mouse_pos = self._to_image_pos(e)
+        rotation = getattr(self, "shape_rotation", 0)
+        orig_rect = self.selection_resize_origin
+        c_old = orig_rect.center()
+        
+        # Determine the fixed point in local space (the corner opposite to the one being dragged)
+        fixed_local = QPointF(c_old)
+        if "top" in self.selection_resizing: fixed_local.setY(orig_rect.bottom())
+        elif "bottom" in self.selection_resizing: fixed_local.setY(orig_rect.top())
+        if "left" in self.selection_resizing: fixed_local.setX(orig_rect.right())
+        elif "right" in self.selection_resizing: fixed_local.setX(orig_rect.left())
+        
+        # Calculate its current world position
+        w_fixed = fixed_local
+        if rotation != 0:
+            t_old = QTransform().translate(c_old.x(), c_old.y()).rotate(rotation).translate(-c_old.x(), -c_old.y())
+            w_fixed = t_old.map(fixed_local)
+            
+            # Inverse rotate mouse position around the old center
+            t_inv = QTransform().translate(c_old.x(), c_old.y()).rotate(-rotation).translate(-c_old.x(), -c_old.y())
+            mouse_local = t_inv.map(mouse_pos)
+        else:
+            mouse_local = mouse_pos
+            
+        rect = QRectF(orig_rect)
+        
+        # Update local boundary based on un-rotated mouse position
+        if "top" in self.selection_resizing:
+            rect.setTop(mouse_local.y())
+        if "bottom" in self.selection_resizing:
+            rect.setBottom(mouse_local.y())
+        if "left" in self.selection_resizing:
+            rect.setLeft(mouse_local.x())
+        if "right" in self.selection_resizing:
+            rect.setRight(mouse_local.x())
+            
+        rect = rect.normalized()
+        c_new = rect.center()
+        
+        # Keep the fixed point stable in world space by translating the local rect
+        if rotation != 0:
+            t_new = QTransform().translate(c_new.x(), c_new.y()).rotate(rotation).translate(-c_new.x(), -c_new.y())
+            w_fixed_new_untranslated = t_new.map(fixed_local)
+            delta = w_fixed - w_fixed_new_untranslated
+            rect.translate(delta.x(), delta.y())
+            
+        new_rect = rect.toRect()
+        if new_rect != self.moving_rect:
+            self._apply_selection_resize(new_rect)
+            self.selection_dimensions_changed.emit(new_rect.width(), new_rect.height())
+            self.update()
+
+    def _end_selection_anchor_resize(self, e):
+        self.selection_resizing = ""
+        self.selection_resize_origin = None
+        self.selection_resize_start_pos = None
+        self._selection_resize_orig_path = None
+        self._selection_resize_orig_history = None
+        self._selection_resize_orig_poly = None
+        try:
+            self.releaseMouse()
+        except RuntimeError:
+            pass
+        self.update()
+
+    def _apply_selection_resize(self, new_rect):
+        """Scale all geometry and content (if in paste mode) to the new rectangle."""
+        orig_rect = QRectF(self.selection_resize_origin)
+        if orig_rect.width() == 0 or orig_rect.height() == 0:
+            self.moving_rect = new_rect
+            return
+            
+        sx = new_rect.width() / orig_rect.width()
+        sy = new_rect.height() / orig_rect.height()
+        
+        # 1. Scale Path from original
+        if getattr(self, "_selection_resize_orig_path", None):
+            transform = QTransform()
+            transform.translate(new_rect.left(), new_rect.top())
+            transform.scale(sx, sy)
+            transform.translate(-orig_rect.left(), -orig_rect.top())
+            self.painter_path = transform.map(self._selection_resize_orig_path)
+            
+        # 2. Scale History Points from original (for Polygon/Lasso/Spline)
+        if getattr(self, "_selection_resize_orig_history", None):
+            self.history_pos = [
+                QPoint(
+                    int(new_rect.left() + (p.x() - orig_rect.left()) * sx),
+                    int(new_rect.top() + (p.y() - orig_rect.top()) * sy)
+                )
+                for p in self._selection_resize_orig_history
+            ]
+
+        # 3. Scale Poly Original Points (for moves)
+        if getattr(self, "_selection_resize_orig_poly", None):
+            self.poly_original_points = [
+                QPoint(
+                    int(new_rect.left() + (p.x() - orig_rect.left()) * sx),
+                    int(new_rect.top() + (p.y() - orig_rect.top()) * sy)
+                )
+                for p in self._selection_resize_orig_poly
+            ]
+
+        # 4. Scale Content (if in paste mode)
+        if self.mode == "paste" and getattr(self, "original_stamp", None):
+             self.current_stamp = self.original_stamp.scaled(
+                 new_rect.size(),
+                 Qt.AspectRatioMode.IgnoreAspectRatio,
+                 Qt.TransformationMode.SmoothTransformation
+             )
+             self.current_stamp = self._get_transparent_stamp(self.current_stamp)
+             # Center the stamp at the center of the new rect
+             self.current_pos = new_rect.center()
+        
+        # 5. Update tracking rect
+        self.moving_rect = new_rect
+
+        # 6. Update move baseline so subsequent moves respect the new size
+        if self.mode == "paste":
+            self._original_moving_rect = QRectF(self.moving_rect)
+            self._original_current_pos = QPointF(self.current_pos)
+            if getattr(self, "history_pos", None):
+                self._original_history_pos = list(self.history_pos)
+        
+        # Also update the baseline for path-based selections/shapes being moved
+        if getattr(self, "original_painter_path", None):
+            self.original_painter_path = QPainterPath(self.painter_path)
+            self.poly_orig_tl = new_rect.topLeft()
+        
+        # Sync poly_orig_tl for simple shapes too
+        if getattr(self, "poly_original_points", None):
+            self.poly_orig_tl = new_rect.topLeft()
+
+        self.selection_dimensions_changed.emit(new_rect.width(), new_rect.height())
+        self._update_display()
+
     def _update_anchor_resize(self, e):
         """Show a 'live' preview of the crop/expansion area while dragging."""
         pos = self._to_image_pos(e)
@@ -3678,6 +4042,11 @@ class Canvas(QLabel):
         if self.mode == "text" and getattr(self, "current_pos", None):
             brect = self._get_text_boundary_box()
             return brect.center()
+        if self.mode == "paste" and getattr(self, "current_pos", None):
+            c = self.current_pos
+            if hasattr(c, "toPoint"):
+                c = QPointF(c)
+            return c
         if getattr(self, "moving_rect", None):
             c = self.moving_rect.center()
             if hasattr(c, "toPoint"):
@@ -3693,12 +4062,23 @@ class Canvas(QLabel):
         space), then rotated around the shape's/text's center by shape_rotation
         so the handle visually follows the bottom of the element during rotation.
         """
-        # Only show for drawing shapes and text tool, not for selections/paste/move
+        # Only show for drawing shapes, text tool, AND active selections
         SHAPE_MODES = {"rect", "ellipse", "roundrect", "polygon", "polyline",
                        "regularpoly", "line", "spline", "text"}
-        if self.mode not in SHAPE_MODES:
+        SELECTION_MODES = {"selectrect", "selectellipse", "selectpoly", "selectfree", "selectwand", "move"}
+        
+        is_active_selection = (
+            self.mode in SELECTION_MODES
+            and getattr(self, "is_moving_shape", False)
+            and getattr(self, "locked", False)
+            and getattr(self, "moving_rect", None)
+        )
+        
+        is_paste = (self.mode == "paste" and getattr(self, "current_stamp", None))
+        
+        if self.mode not in SHAPE_MODES and not is_active_selection and not is_paste:
             return None
-        if getattr(self, "selectionActive", False):
+        if getattr(self, "selectionActive", False) and self.mode in SHAPE_MODES:
             return None
 
         s = getattr(self, "scale", 1.0)
@@ -3714,6 +4094,13 @@ class Canvas(QLabel):
             rect_right  = brect.right()
             rect_top    = brect.top()
             rect_bottom = brect.bottom()
+        elif is_paste:
+            cp = self.current_pos
+            w, h = self.current_stamp.width(), self.current_stamp.height()
+            rect_left = cp.x() - w // 2
+            rect_right = rect_left + w
+            rect_top = cp.y() - h // 2
+            rect_bottom = rect_top + h
         else:
             # Shape tools: use moving_rect
             if not getattr(self, "is_moving_shape", False) or not getattr(self, "moving_rect", None):
@@ -3732,7 +4119,7 @@ class Canvas(QLabel):
 
         # Shape/text center in image coordinates
         shape_cx = (rect_left  + rect_right)  / 2.0
-        shape_cy = (rect_top   + rect_bottom - 24) / 2.0
+        shape_cy = (rect_top   + rect_bottom) / 2.0
 
         # Rotate the anchor around the center by shape_rotation
         rotation = getattr(self, "shape_rotation", 0)
@@ -3850,10 +4237,9 @@ class Canvas(QLabel):
                          # Draw star preview during drag (Center-based)
                          center = self.origin_pos
                          dist = math.sqrt((self.current_pos.x() - center.x())**2 + (self.current_pos.y() - center.y())**2)
-                         outer_r = dist
-                         inner_r = outer_r * self.config["poly_inner_radius"]
-                         n = self.config["poly_vertices"]
-                         path = self._get_star_path(center, outer_r, inner_r, n)
+                         rx = ry = dist
+                         ratio = self.config["poly_inner_radius"]
+                         path = self._get_star_path(center, rx, ry, rx * ratio, ry * ratio, self.config["poly_vertices"])
                          overlay_painter.drawPath(path)
                     else:
                          rect = QRect(self.origin_pos, self.current_pos).normalized()
@@ -3863,10 +4249,10 @@ class Canvas(QLabel):
                         pass # Path is drawn in the walking ants section
                     elif self.active_shape_fn == "drawStar":
                          center = self.moving_rect.center()
-                         outer_r = self.moving_rect.width() / 2
-                         inner_r = outer_r * self.config["poly_inner_radius"]
-                         n = self.config["poly_vertices"]
-                         path = self._get_star_path(center, outer_r, inner_r, n)
+                         rx = self.moving_rect.width() / 2
+                         ry = self.moving_rect.height() / 2
+                         ratio = self.config["poly_inner_radius"]
+                         path = self._get_star_path(center, rx, ry, rx * ratio, ry * ratio, self.config["poly_vertices"])
                          overlay_painter.drawPath(path)
                     else:
                         getattr(overlay_painter, self.active_shape_fn)(self.moving_rect, *self.active_shape_args)
@@ -4018,28 +4404,37 @@ class Canvas(QLabel):
                 # ensure a pixel-perfect 1-image-pixel wide border.
                 # Even for lines, our pixel-perfect path is composed of 1x1 rectangles,
                 # so clipping works to reduce the 2-pixel pen to a 1-pixel line.
-                if is_moving or self.active_shape_fn in ["drawRect", "drawEllipse"]:
+                if self.selectionActive or is_moving or self.mode == "paste" or self.active_shape_fn in ["drawRect", "drawEllipse", "drawStar", "drawSpline", "drawPolygon", "drawPolyline", "drawLine"]:
                     painter.setClipPath(clip_path)
                 elif getattr(self, "history_pos", None) and len(self.history_pos) >= 1:
                     # 1+ points in history means 2+ points total including hover (a line or more)
                     painter.setClipPath(clip_path)
                 
                 painter.drawPath(clip_path)
+
+                # Draw bounding box for resizing
+                if self.moving_rect:
+                    bbox = QRectF(self.moving_rect)
+                    box_pen = QPen(Qt.GlobalColor.white, 1, Qt.PenStyle.DashLine)
+                    painter.setPen(box_pen)
+                    painter.drawRect(bbox)
+                
                 painter.restore()
 
             elif self.active_shape_fn == "drawStar":
                 if is_moving and self.moving_rect:
                     center = self.moving_rect.center()
-                    outer_r = self.moving_rect.width() / 2
+                    rx = self.moving_rect.width() / 2
+                    ry = self.moving_rect.height() / 2
                 else:
                     rect = QRect(self.origin_pos, self.current_pos).normalized()
                     side = max(rect.width(), rect.height())
                     center = rect.center()
-                    outer_r = side / 2
+                    rx = ry = side / 2
 
-                inner_r = outer_r * self.config["poly_inner_radius"]
+                ratio = self.config["poly_inner_radius"]
                 n = self.config["poly_vertices"]
-                path = self._get_star_path(center, outer_r, inner_r, n)
+                path = self._get_star_path(center, rx, ry, rx * ratio, ry * ratio, n)
                 
                 painter.save()
                 painter.setCompositionMode(QPainter.CompositionMode.RasterOp_SourceXorDestination)
@@ -4064,7 +4459,14 @@ class Canvas(QLabel):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
             cp = self.current_pos
-            top_left = QPoint(cp.x() - self.current_stamp.width() // 2, cp.y() - self.current_stamp.height() // 2)
+            top_left = QPointF(cp.x() - self.current_stamp.width() / 2.0, cp.y() - self.current_stamp.height() / 2.0)
+            
+            rotation = getattr(self, "shape_rotation", 0)
+            if rotation != 0:
+                painter.translate(cp.x(), cp.y())
+                painter.rotate(rotation)
+                painter.translate(-cp.x(), -cp.y())
+                
             painter.drawPixmap(top_left, self.current_stamp)
             
             # Draw animated dashed border
@@ -4147,6 +4549,15 @@ class Canvas(QLabel):
             painter.setPen(pen)
             painter.drawRect(r)
         
+        # Draw selection anchors in widget coordinates
+        sel_rects = self._selection_anchor_rects_display()
+        for name, r in sel_rects.items():
+            painter.fillRect(r, fill)
+            pen = QPen(border)
+            pen.setWidth(1)
+            painter.setPen(pen)
+            painter.drawRect(r)
+        
         # Draw Star tool handle in widget coordinates for maximum visibility and clipping immunity
         if self.mode == "regularpoly" and getattr(self, "is_moving_shape", False) and getattr(self, "moving_rect", None):
             painter.save()
@@ -4155,11 +4566,11 @@ class Canvas(QLabel):
             
             s = getattr(self, "scale", 1.0)
             center = self.moving_rect.center()
-            outer_r = self.moving_rect.width() / 2
-            inner_r = outer_r * self.config["poly_inner_radius"]
             n = self.config["poly_vertices"]
-            
-            pts = self._get_star_vertices(center, outer_r, inner_r, n)
+            rx = self.moving_rect.width() / 2
+            ry = self.moving_rect.height() / 2
+            ratio = self.config["poly_inner_radius"]
+            pts = self._get_star_vertices(center, rx, ry, rx * ratio, ry * ratio, n)
             if pts and len(pts) > 1:
                 # Rotate the inner handle point around center by shape_rotation
                 raw_pt = pts[1]
@@ -4729,20 +5140,21 @@ class Canvas(QLabel):
                 
         painter.restore()
 
-    def _get_star_vertices(self, center, outer_r, inner_r, n):
+    def _get_star_vertices(self, center, rx, ry, irx, iry, n):
         points = []
         angle_step = math.pi / n
         start_angle = -math.pi / 2 # Pointing up
         
         for i in range(2 * n):
             angle = start_angle + i * angle_step
-            r = outer_r if i % 2 == 0 else inner_r
-            points.append(QPointF(center.x() + r * math.cos(angle), center.y() + r * math.sin(angle)))
+            curr_rx = rx if i % 2 == 0 else irx
+            curr_ry = ry if i % 2 == 0 else iry
+            points.append(QPointF(center.x() + curr_rx * math.cos(angle), center.y() + curr_ry * math.sin(angle)))
         return points
 
-    def _get_star_path(self, center, outer_r, inner_r, n):
+    def _get_star_path(self, center, rx, ry, irx, iry, n):
         path = QPainterPath()
-        pts = self._get_star_vertices(center, outer_r, inner_r, n)
+        pts = self._get_star_vertices(center, rx, ry, irx, iry, n)
         if not pts:
             return path
         path.moveTo(pts[0])
@@ -4771,8 +5183,7 @@ class Canvas(QLabel):
             
             if self._is_selection_hit(pos):
                 self.is_dragging_shape = True
-                tl = self.moving_rect.topLeft()
-                self._drag_offset = QPoint(pos.x() - tl.x(), pos.y() - tl.y())
+                self._prev_move_pos = pos  # delta-based: remember press position
                 return
             else:
                 self.finalize_operation()
@@ -4814,8 +5225,12 @@ class Canvas(QLabel):
 
         self.current_pos = pos_pixel
         if self.is_moving_shape and self.is_dragging_shape:
-            new_top_left = QPoint(pos_pixel.x() - self._drag_offset.x(), pos_pixel.y() - self._drag_offset.y())
-            self.moving_rect.moveTo(new_top_left)
+            prev = getattr(self, "_prev_move_pos", None)
+            if prev is not None:
+                dx = pos_pixel.x() - prev.x()
+                dy = pos_pixel.y() - prev.y()
+                self.moving_rect.translate(dx, dy)
+            self._prev_move_pos = pos_pixel
             self.update()
         
     def regularpoly_mouseReleaseEvent(self, e):
@@ -4825,6 +5240,7 @@ class Canvas(QLabel):
 
         if self.is_moving_shape:
             self.is_dragging_shape = False
+            self._prev_move_pos = None  # clear delta baseline
             return
 
         if self.origin_pos is not None and self.current_pos is not None:
@@ -4859,11 +5275,12 @@ class Canvas(QLabel):
             
         s = self.scale
         center = self.moving_rect.center()
-        outer_r = (self.moving_rect.width() / 2)
-        inner_r = outer_r * self.config["poly_inner_radius"]
+        rx = self.moving_rect.width() / 2
+        ry = self.moving_rect.height() / 2
+        ratio = self.config["poly_inner_radius"]
         n = self.config["poly_vertices"]
         
-        pts = self._get_star_vertices(center, outer_r, inner_r, n)
+        pts = self._get_star_vertices(center, rx, ry, rx * ratio, ry * ratio, n)
         if not pts: return None
         
         # Rotate the inner handle point by shape_rotation before hit-testing
@@ -4902,10 +5319,11 @@ class Canvas(QLabel):
             p.translate(-center.x(), -center.y())
 
         center = self.moving_rect.center()
-        outer_r = self.moving_rect.width() / 2
-        inner_r = outer_r * self.config["poly_inner_radius"]
+        rx = self.moving_rect.width() / 2
+        ry = self.moving_rect.height() / 2
+        ratio = self.config["poly_inner_radius"]
         n = self.config["poly_vertices"]
-        path = self._get_star_path(center, outer_r, inner_r, n)
+        path = self._get_star_path(center, rx, ry, rx * ratio, ry * ratio, n)
         p.drawPath(path)
         p.end()
         self.setPixmap(pixmap)
