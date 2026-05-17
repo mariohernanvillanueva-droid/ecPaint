@@ -18,6 +18,7 @@ from PySide6.QtGui import (
     QPixmap,
     QPolygon,
     QPolygonF,
+    QRadialGradient,
     QRegion,
     QTransform,
 )
@@ -2719,8 +2720,10 @@ class Canvas(QLabel):
                 size = self.config["size"]
                 color = c
             elif self.mode == "brush":
-                size = self.config["size"] * constants.BRUSH_MULT
-                color = self.active_color
+                size = int(max(self.config["size"] * constants.BRUSH_MULT, 2))
+                if not hasattr(self, "_brush_tip"):
+                    self._init_brush_tip()
+                p.drawImage(QPointF(raw_pts[0].x() - size / 2.0, raw_pts[0].y() - size / 2.0), self._brush_tip)
             elif self.mode == "eraser":
                 size = self.config["size"]
                 if getattr(self, "_mouse_button_pressed", None) == Qt.MouseButton.RightButton:
@@ -2740,12 +2743,27 @@ class Canvas(QLabel):
                     else:
                         p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
                         color = Qt.GlobalColor.transparent
+            elif self.mode == "spray":
+                size = self.config["size"]
+                antialias = self.config.get("antialias", False)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+                pen_width = 1.5 if antialias else 1.0
+                p.setPen(QPen(self.active_color, pen_width))
+                for _ in range(int(size * constants.SPRAY_PAINT_N)):
+                    xo = random.gauss(0, size * constants.SPRAY_PAINT_MULT)
+                    yo = random.gauss(0, size * constants.SPRAY_PAINT_MULT)
+                    if antialias:
+                        point = QPointF(raw_pts[0].x() + xo, raw_pts[0].y() + yo)
+                    else:
+                        point = QPoint(int(raw_pts[0].x() + xo), int(raw_pts[0].y() + yo))
+                    p.drawPoint(point)
             else: # pen
                 size = self.config["size"]
                 color = self.active_color
 
-            p.setPen(QPen(color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            p.drawPoint(raw_pts[0])
+            if self.mode not in ["brush", "spray"]:
+                p.setPen(QPen(color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                p.drawPoint(raw_pts[0])
             p.end()
             self._image_pixmap = QPixmap.fromImage(self._working_image)
             self.setPixmap(self._image_pixmap, record=False)
@@ -2779,8 +2797,14 @@ class Canvas(QLabel):
             size = self.config["size"]
             color = c
         elif self.mode == "brush":
-            size = self.config["size"] * constants.BRUSH_MULT
-            color = self.active_color
+            size = int(max(self.config["size"] * constants.BRUSH_MULT, 2))
+            if not hasattr(self, "_brush_tip"):
+                self._init_brush_tip()
+            length = path.length()
+            steps = int(max(length, 1))
+            for i in range(steps + 1):
+                pt = path.pointAtPercent(i / steps)
+                p.drawImage(QPointF(pt.x() - size / 2.0, pt.y() - size / 2.0), self._brush_tip)
         elif self.mode == "eraser":
             size = self.config["size"]
             if getattr(self, "_mouse_button_pressed", None) == Qt.MouseButton.RightButton:
@@ -2801,20 +2825,38 @@ class Canvas(QLabel):
                 else:
                     p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
                     color = Qt.GlobalColor.transparent
+        elif self.mode == "spray":
+            length = path.length()
+            droplets = int(max(length, 1.0) * self.config["size"] * constants.SPRAY_PAINT_N)
+            antialias = self.config.get("antialias", False)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+            pen_width = 1.5 if antialias else 1.0
+            p.setPen(QPen(self.active_color, pen_width))
+            for _ in range(droplets):
+                t = random.random()
+                pt = path.pointAtPercent(t)
+                xo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
+                yo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
+                if antialias:
+                    point = QPointF(pt.x() + xo, pt.y() + yo)
+                else:
+                    point = QPoint(int(pt.x() + xo), int(pt.y() + yo))
+                p.drawPoint(point)
         else: # pen
             size = self.config["size"]
             color = self.active_color
 
-        p.setPen(
-            QPen(
-                color,
-                size,
-                Qt.PenStyle.SolidLine,
-                Qt.PenCapStyle.RoundCap,
-                Qt.PenJoinStyle.RoundJoin,
+        if self.mode not in ["brush", "spray"]:
+            p.setPen(
+                QPen(
+                    color,
+                    size,
+                    Qt.PenStyle.SolidLine,
+                    Qt.PenCapStyle.RoundCap,
+                    Qt.PenJoinStyle.RoundJoin,
+                )
             )
-        )
-        p.drawPath(path)
+            p.drawPath(path)
         p.end()
         
         self._image_pixmap = QPixmap.fromImage(self._working_image)
@@ -2841,8 +2883,58 @@ class Canvas(QLabel):
 
     # Brush events
 
+    def _init_brush_tip(self):
+        import random, math
+        size = int(max(self.config["size"] * constants.BRUSH_MULT, 2))
+        self._brush_tip = QImage(size, size, QImage.Format.Format_ARGB32)
+        self._brush_tip.fill(Qt.GlobalColor.transparent)
+        
+        p = QPainter(self._brush_tip)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        
+        # Soft radial gradient for airbrush / watercolor feel
+        grad = QRadialGradient(size / 2.0, size / 2.0, size / 2.0)
+        color = QColor(self.active_color)
+        
+        # Center has good opacity, fading out to edges
+        grad.setColorAt(0, QColor(color.red(), color.green(), color.blue(), 100))
+        grad.setColorAt(0.3, QColor(color.red(), color.green(), color.blue(), 50))
+        grad.setColorAt(0.7, QColor(color.red(), color.green(), color.blue(), 15))
+        grad.setColorAt(1, QColor(color.red(), color.green(), color.blue(), 0))
+        
+        p.setBrush(grad)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawEllipse(0, 0, size, size)
+        
+        # Add realistic bristles texture (fine noise)
+        rnd = random.Random(42)
+        p.setPen(QColor(color.red(), color.green(), color.blue(), 25))
+        for _ in range(int(size * 1.5)):
+            r = rnd.uniform(0, size / 2.0)
+            theta = rnd.uniform(0, 2 * math.pi)
+            x = size / 2.0 + r * math.cos(theta)
+            y = size / 2.0 + r * math.sin(theta)
+            p.drawPoint(int(x), int(y))
+            
+        p.end()
+
     def brush_mousePressEvent(self, e):
-        self.generic_mousePressEvent(e)
+        # Clear redo stack when starting a new stroke
+        self._redo_stack.clear()
+        try:
+            self.redo_available.emit(False)
+        except Exception:
+            pass
+
+        self._record_snapshot()
+        self.last_pos = self._to_image_pixel(e)
+        self.stroke_points = [self.last_pos]
+        self._working_image = self._image_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+        if self.config.get("smooth", False):
+            self._stroke_undo_image = self._working_image.copy()
+
+        self._init_brush_tip()
+
         # Trigger immediate drawing for visual feedback on click
         self.brush_mouseMoveEvent(e)
 
@@ -2852,22 +2944,19 @@ class Canvas(QLabel):
             if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
 
-            # Draw RAW line for immediate feedback
+            size = int(max(self.config["size"] * constants.BRUSH_MULT, 2))
+            
             p = QPainter(self._working_image)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
-            p.setPen(
-                QPen(
-                    self.active_color,
-                    self.config["size"] * constants.BRUSH_MULT,
-                    Qt.PenStyle.SolidLine,
-                    Qt.PenCapStyle.RoundCap,
-                    Qt.PenJoinStyle.RoundJoin,
-                )
-            )
-            if curr == self.last_pos:
-                p.drawPoint(curr)
-            else:
-                p.drawLine(self.last_pos, curr)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            
+            # Line interpolation to ensure smooth stamps with no gaps
+            dist = math.hypot(curr.x() - self.last_pos.x(), curr.y() - self.last_pos.y())
+            steps = int(max(dist, 1))
+            for i in range(steps + 1):
+                t = i / steps
+                x = self.last_pos.x() + (curr.x() - self.last_pos.x()) * t
+                y = self.last_pos.y() + (curr.y() - self.last_pos.y()) * t
+                p.drawImage(QPointF(x - size / 2.0, y - size / 2.0), self._brush_tip)
             p.end()
 
             self.stroke_points.append(curr)
@@ -2964,38 +3053,78 @@ class Canvas(QLabel):
 
     def spray_mouseMoveEvent(self, e):
         if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
-            p = QPainter(self._working_image)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            p.setPen(QPen(self.active_color, 1))
+            curr = self._to_image_pixel(e)
+            if curr == self.last_pos and len(self.stroke_points) > 1:
+                return
 
-            for n in range(self.config["size"] * constants.SPRAY_PAINT_N):
+            p = QPainter(self._working_image)
+            antialias = self.config.get("antialias", False)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+            pen_width = 1.5 if antialias else 1.0
+            p.setPen(QPen(self.active_color, pen_width))
+
+            dist = math.hypot(curr.x() - self.last_pos.x(), curr.y() - self.last_pos.y())
+            # Consistent density: scale number of droplets by distance, minimum of 1 burst size
+            base_droplets = self.config["size"] * constants.SPRAY_PAINT_N
+            droplets = int(max(dist, 1.0) * base_droplets)
+
+            for n in range(droplets):
+                # Interpolate along the movement path
+                t = random.random()
+                x = self.last_pos.x() + (curr.x() - self.last_pos.x()) * t
+                y = self.last_pos.y() + (curr.y() - self.last_pos.y()) * t
+                
                 xo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
                 yo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
-                pos = self._to_image_pos(e)
-                # Snap spray points to integer pixel grid for consistency
-                point = QPoint(int(pos.x() + xo), int(pos.y() + yo))
+                
+                if antialias:
+                    point = QPointF(x + xo, y + yo)
+                else:
+                    point = QPoint(int(x + xo), int(y + yo))
                 p.drawPoint(point)
             p.end()
+
+            self.stroke_points.append(curr)
+            self.last_pos = curr
+
+            # Start/Reset smoothing timer if smooth is enabled
+            if self.config.get("smooth", False):
+                if not hasattr(self, "_smooth_timer"):
+                    self._smooth_timer = QTimer()
+                    self._smooth_timer.setSingleShot(True)
+                    self._smooth_timer.timeout.connect(self._finalize_smooth_stroke)
+                self._smooth_timer.start(1000)
+
             self._image_pixmap = QPixmap.fromImage(self._working_image)
             self.update()
 
     def spray_mouseReleaseEvent(self, e):
-        # Draw a spray burst on click even if mouse didn't move.
-        curr = self._to_image_pos(e)
-        if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
-            p = QPainter(self._working_image)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            p.setPen(QPen(self.active_color, 1))
+        # Finalize smoothing if active
+        if self.config.get("smooth", False):
+            if hasattr(self, "_smooth_timer"):
+                self._smooth_timer.stop()
+            self._finalize_smooth_stroke()
+        else:
+            # Draw a final spray burst on release to capture any last click/tap
+            curr = self._to_image_pos(e)
+            if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
+                p = QPainter(self._working_image)
+                antialias = self.config.get("antialias", False)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+                pen_width = 1.5 if antialias else 1.0
+                p.setPen(QPen(self.active_color, pen_width))
 
-            for n in range(self.config["size"] * constants.SPRAY_PAINT_N):
-                xo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
-                yo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
-                # Snap spray points to integer pixel grid for consistency
-                point = QPoint(int(curr.x() + xo), int(curr.y() + yo))
-                p.drawPoint(point)
-            p.end()
-            self._image_pixmap = QPixmap.fromImage(self._working_image)
-            self.setPixmap(self._image_pixmap, record=False)
+                for n in range(int(self.config["size"] * constants.SPRAY_PAINT_N)):
+                    xo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
+                    yo = random.gauss(0, self.config["size"] * constants.SPRAY_PAINT_MULT)
+                    if antialias:
+                        point = QPointF(curr.x() + xo, curr.y() + yo)
+                    else:
+                        point = QPoint(int(curr.x() + xo), int(curr.y() + yo))
+                    p.drawPoint(point)
+                p.end()
+                self._image_pixmap = QPixmap.fromImage(self._working_image)
+                self.setPixmap(self._image_pixmap, record=False)
 
         self.generic_mouseReleaseEvent(e)
 
