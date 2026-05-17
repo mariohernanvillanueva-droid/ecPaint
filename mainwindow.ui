@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>760</width>
-    <height>840</height>
+    <height>876</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -215,7 +215,7 @@ QToolBar QLabel {
    <property name="minimumSize">
     <size>
      <width>72</width>
-     <height>585</height>
+     <height>617</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -298,7 +298,7 @@ QToolBar QLabel {
         <property name="verticalSpacing">
          <number>4</number>
         </property>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <widget class="QPushButton" name="simplelineButton">
           <property name="minimumSize">
            <size>
@@ -327,7 +327,27 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="11" column="1">
+        <item row="17" column="0">
+         <widget class="QToolButton" name="shapeToolButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/blue-rect.png</normaloff>:/icons/blue-rect.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1">
          <widget class="QPushButton" name="regularpolyButton">
           <property name="minimumSize">
            <size>
@@ -356,76 +376,7 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="16" column="0">
-         <widget class="QToolButton" name="shapeToolButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="visible">
-           <bool>false</bool>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/blue-rect.png</normaloff>:/icons/blue-rect.png</iconset>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="1">
-         <widget class="QPushButton" name="polylineButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>28</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Polyline</string>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/blue-polyline.png</normaloff>:/icons/blue-polyline.png</iconset>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="1">
-         <widget class="QToolButton" name="lineToolButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="visible">
-           <bool>false</bool>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/simple-line.png</normaloff>:/icons/simple-line.png</iconset>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="1">
+        <item row="11" column="1">
          <widget class="QPushButton" name="roundrectButton">
           <property name="minimumSize">
            <size>
@@ -454,7 +405,7 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
+        <item row="9" column="1">
          <widget class="QPushButton" name="splineButton">
           <property name="minimumSize">
            <size>
@@ -483,28 +434,51 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="fillButton">
+        <item row="13" column="1">
+         <widget class="QPushButton" name="polylineButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>28</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Polyline</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/blue-polyline.png</normaloff>:/icons/blue-polyline.png</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="1">
+         <widget class="QToolButton" name="lineToolButton">
           <property name="minimumSize">
            <size>
             <width>28</width>
             <height>28</height>
            </size>
           </property>
+          <property name="visible">
+           <bool>false</bool>
+          </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/paint-can.png</normaloff>:/icons/paint-can.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
+            <normaloff>:/icons/simple-line.png</normaloff>:/icons/simple-line.png</iconset>
           </property>
           <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
            <bool>true</bool>
           </property>
          </widget>
@@ -520,6 +494,32 @@ QToolBar QLabel {
           <property name="icon">
            <iconset resource="resources.qrc">
             <normaloff>:/icons/eraser.png</normaloff>:/icons/eraser.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="fillButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/paint-can.png</normaloff>:/icons/paint-can.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -593,6 +593,67 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="dropperButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/pipette.png</normaloff>:/icons/pipette.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QPushButton" name="textButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>36</horstretch>
+            <verstretch>36</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/edit.png</normaloff>:/icons/edit.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="1">
          <widget class="QToolButton" name="selectToolButton">
           <property name="minimumSize">
@@ -642,63 +703,31 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QPushButton" name="dropperButton">
+        <item row="16" column="1">
+         <widget class="QPushButton" name="stampButton">
           <property name="minimumSize">
            <size>
-            <width>28</width>
-            <height>28</height>
+            <width>36</width>
+            <height>36</height>
            </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>36</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/pipette.png</normaloff>:/icons/pipette.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
+            <normaloff>:/icons/stamp.png</normaloff>:/icons/stamp.png</iconset>
           </property>
           <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QPushButton" name="textButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>36</horstretch>
-            <verstretch>36</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/edit.png</normaloff>:/icons/edit.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
            <bool>true</bool>
           </property>
          </widget>
@@ -729,29 +758,113 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="15" column="1">
-         <widget class="QPushButton" name="stampButton">
+        <item row="11" column="0">
+         <widget class="QPushButton" name="polygonButton">
           <property name="minimumSize">
            <size>
-            <width>36</width>
-            <height>36</height>
+            <width>28</width>
+            <height>28</height>
            </size>
           </property>
-          <property name="maximumSize">
-           <size>
-            <width>36</width>
-            <height>36</height>
-           </size>
-          </property>
-          <property name="visible">
-           <bool>false</bool>
-          </property>
-          <property name="styleSheet">
-           <string notr="true"/>
+          <property name="toolTip">
+           <string>Polygon</string>
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/stamp.png</normaloff>:/icons/stamp.png</iconset>
+            <normaloff>:/icons/blue-poly.png</normaloff>:/icons/blue-poly.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QPushButton" name="rectButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Rectangle</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/blue-rect.png</normaloff>:/icons/blue-rect.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QPushButton" name="ellipseButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Ellipse</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/blue-ellipse.png</normaloff>:/icons/blue-ellipse.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QPushButton" name="sprayButton">
+          <property name="minimumSize">
+           <size>
+            <width>28</width>
+            <height>28</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/spray.png</normaloff>:/icons/spray.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -784,94 +897,7 @@ QToolBar QLabel {
           </property>
          </widget>
         </item>
-        <item row="9" column="1">
-         <widget class="QPushButton" name="rectButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Rectangle</string>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/blue-rect.png</normaloff>:/icons/blue-rect.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0">
-         <widget class="QPushButton" name="ellipseButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Ellipse</string>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/blue-ellipse.png</normaloff>:/icons/blue-ellipse.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="polygonButton">
-          <property name="minimumSize">
-           <size>
-            <width>28</width>
-            <height>28</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Polygon</string>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/icons/blue-poly.png</normaloff>:/icons/blue-poly.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0">
+        <item row="7" column="0">
          <widget class="QPushButton" name="smudgeButton">
           <property name="text">
            <string/>

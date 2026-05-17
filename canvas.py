@@ -2298,6 +2298,8 @@ class Canvas(QLabel):
         if self.config.get("smooth", False):
             self._stroke_undo_image = self._working_image.copy()
         
+        self._mouse_button_pressed = e.button()
+        
         # Trigger immediate drawing for visual feedback on click
         self.eraser_mouseMoveEvent(e)
 
@@ -2312,12 +2314,30 @@ class Canvas(QLabel):
             antialias = self.config.get("antialias", False) or self.config.get("smooth", False)
             p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
 
-            if self.config.get("fill"):
+            # Color Eraser logic: right-click replaces primary color with secondary color
+            if getattr(self, "_mouse_button_pressed", None) == Qt.MouseButton.RightButton:
+                size = self.config["size"]
+                pad = int(size / 2) + 2
+                bbox = QRect(self.last_pos, curr).normalized().adjusted(-pad, -pad, pad, pad)
+                bbox = bbox.intersected(self._working_image.rect())
+                
+                region_img = self._working_image.copy(bbox)
+                mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                bitmap = QBitmap.fromImage(mask_img)
+                
+                region = QRegion(bitmap)
+                region.translate(bbox.topLeft())
+                p.setClipRegion(region)
+                
                 p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
                 color = self.secondary_color
             else:
-                p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
-                color = Qt.GlobalColor.transparent
+                if self.config.get("fill"):
+                    p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                    color = self.secondary_color
+                else:
+                    p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+                    color = Qt.GlobalColor.transparent
 
             p.setPen(QPen(color, self.config["size"], Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
             
@@ -2701,6 +2721,25 @@ class Canvas(QLabel):
             elif self.mode == "brush":
                 size = self.config["size"] * constants.BRUSH_MULT
                 color = self.active_color
+            elif self.mode == "eraser":
+                size = self.config["size"]
+                if getattr(self, "_mouse_button_pressed", None) == Qt.MouseButton.RightButton:
+                    pad = int(size / 2) + 2
+                    bbox = QRect(raw_pts[0].x() - pad, raw_pts[0].y() - pad, pad*2, pad*2).intersected(self._working_image.rect())
+                    region_img = self._working_image.copy(bbox)
+                    mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                    region = QRegion(QBitmap.fromImage(mask_img))
+                    region.translate(bbox.topLeft())
+                    p.setClipRegion(region)
+                    p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                    color = self.secondary_color
+                else:
+                    if self.config.get("fill"):
+                        p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                        color = self.secondary_color
+                    else:
+                        p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+                        color = Qt.GlobalColor.transparent
             else: # pen
                 size = self.config["size"]
                 color = self.active_color
@@ -2743,13 +2782,25 @@ class Canvas(QLabel):
             size = self.config["size"] * constants.BRUSH_MULT
             color = self.active_color
         elif self.mode == "eraser":
-            if self.config.get("fill"):
+            size = self.config["size"]
+            if getattr(self, "_mouse_button_pressed", None) == Qt.MouseButton.RightButton:
+                pad = int(size / 2) + 2
+                bbox = path.boundingRect().toAlignedRect().adjusted(-pad, -pad, pad, pad)
+                bbox = bbox.intersected(self._working_image.rect())
+                region_img = self._working_image.copy(bbox)
+                mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                region = QRegion(QBitmap.fromImage(mask_img))
+                region.translate(bbox.topLeft())
+                p.setClipRegion(region)
                 p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
                 color = self.secondary_color
             else:
-                p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
-                color = Qt.GlobalColor.transparent
-            size = self.config["size"]
+                if self.config.get("fill"):
+                    p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                    color = self.secondary_color
+                else:
+                    p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+                    color = Qt.GlobalColor.transparent
         else: # pen
             size = self.config["size"]
             color = self.active_color
