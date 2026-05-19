@@ -315,6 +315,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.smoothCheckbox.toggled.connect(lambda checked: self.canvas.set_config("smooth", checked))
         self.smoothCheckbox.hide()
 
+        # Add "No Fill" checkbox below smooth checkbox
+        self.textNoFillCheckbox = QCheckBox("No Fill")
+        self.textNoFillCheckbox.setStyleSheet("font-size: 12px; margin-left: 2px; margin-top: 16px; spacing: 4px;")
+        self.backLayout.insertWidget(self.backLayout.indexOf(self.smoothCheckbox) + 1, self.textNoFillCheckbox)
+        self.textNoFillCheckbox.toggled.connect(lambda checked: self.canvas.set_config("text_no_fill", checked))
+        self.textNoFillCheckbox.hide()
+
         # Hide arrowButton as it is no longer needed
         # self.arrowButton.hide()
 
@@ -783,6 +790,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.smoothCheckbox.setChecked(self.canvas.config.get("smooth", False))
             self.smoothCheckbox.blockSignals(False)
 
+        # Show/Hide Text No Fill Checkbox
+        is_text_tool = mode == "text"
+        self.textNoFillCheckbox.setVisible(is_text_tool)
+        if is_text_tool:
+            self.textNoFillCheckbox.blockSignals(True)
+            self.textNoFillCheckbox.setChecked(self.canvas.config.get("text_no_fill", False))
+            self.textNoFillCheckbox.blockSignals(False)
+
         # Show/Hide Regular Poly Toolbar
         if mode == "regularpoly" and self.actionShowToolProperties.isChecked():
             self.polyToolbar.show()
@@ -1101,24 +1116,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.add_to_recent_files(path)
 
     def invert(self):
-        pixmap = self.canvas.pixmap()
-        img = pixmap.toImage()
-        img.invertPixels()
-        pix = QPixmap()
-        pix.convertFromImage(img)
-        self.canvas.setPixmap(pix)
+        if getattr(self.canvas, "selectionActive", False) or self.canvas.mode == "paste":
+            self.canvas.invert_selection_colors()
+        else:
+            pixmap = self.canvas.pixmap()
+            img = pixmap.toImage()
+            img.invertPixels()
+            pix = QPixmap()
+            pix.convertFromImage(img)
+            self.canvas.setPixmap(pix)
 
     def flip_horizontal(self):
-        pixmap = self.canvas.pixmap()
-        self.canvas.setPixmap(pixmap.transformed(QTransform().scale(-1, 1)))
+        if getattr(self.canvas, "selectionActive", False) or self.canvas.mode == "paste":
+            self.canvas.flip_selection_horizontal()
+        else:
+            pixmap = self.canvas.pixmap()
+            self.canvas.setPixmap(pixmap.transformed(QTransform().scale(-1, 1)))
 
     def flip_vertical(self):
-        pixmap = self.canvas.pixmap()
-        self.canvas.setPixmap(pixmap.transformed(QTransform().scale(1, -1)))
+        if getattr(self.canvas, "selectionActive", False) or self.canvas.mode == "paste":
+            self.canvas.flip_selection_vertical()
+        else:
+            pixmap = self.canvas.pixmap()
+            self.canvas.setPixmap(pixmap.transformed(QTransform().scale(1, -1)))
 
     def rotate_right(self):
-        pixmap = self.canvas.pixmap()
-        self.canvas.setPixmap(pixmap.transformed(QTransform().rotate(90)))
+        if getattr(self.canvas, "selectionActive", False) or self.canvas.mode == "paste":
+            self.canvas.rotate_selection_right()
+        else:
+            pixmap = self.canvas.pixmap()
+            self.canvas.setPixmap(pixmap.transformed(QTransform().rotate(90)))
 
     def show_resize_dialog(self):
         if not self.canvas._image_pixmap:

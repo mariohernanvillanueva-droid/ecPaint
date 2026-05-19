@@ -796,6 +796,30 @@ class Canvas(QLabel):
             self.original_painter_path = QPainterPath(self.painter_path)
             self.poly_orig_tl = self.moving_rect.topLeft()
 
+    def _subtract_selection(self, new_path):
+        """Subtracts a new QPainterPath from the current selection state."""
+        if not getattr(self, "painter_path", None) or self.painter_path.isEmpty():
+            self.painter_path = QPainterPath()
+            if getattr(self, "moving_rect", None) and not self.moving_rect.isEmpty():
+                # Import existing selection geometry into the path
+                if self.active_shape_fn == "drawEllipse":
+                    self.painter_path.addEllipse(QRectF(self.moving_rect))
+                elif self.active_shape_fn in ["drawPolygon", "drawPolyline"] and getattr(self, "history_pos", None):
+                    poly = QPolygonF([QPointF(pt) for pt in self.history_pos])
+                    self.painter_path.addPolygon(poly)
+                else:
+                    self.painter_path.addRect(QRectF(self.moving_rect))
+        
+        if getattr(self, "painter_path", None) and not self.painter_path.isEmpty() and not new_path.isEmpty():
+            self.painter_path = self.painter_path.subtracted(new_path)
+            if self.painter_path.isEmpty():
+                self.deselect()
+            else:
+                self.moving_rect = self.painter_path.boundingRect().toRect()
+                self.active_shape_fn = "drawPath"
+                self.original_painter_path = QPainterPath(self.painter_path)
+                self.poly_orig_tl = self.moving_rect.topLeft()
+
     def _is_selection_hit(self, pos):
         """Unified precise hit detection for both rectangular and polygonal selections."""
         # Ensure we work with QPointF for QPainterPath precision
@@ -1460,8 +1484,8 @@ class Canvas(QLabel):
             if e.button() == Qt.MouseButton.LeftButton:
                 pos = self._to_image_pixel(e)
                 
-                # Priority: If holding Ctrl, always start a new selection instead of dragging
-                if e.modifiers() & Qt.ControlModifier:
+                # Priority: If holding Ctrl or Alt, always start a new selection instead of dragging
+                if e.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                     pass
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
@@ -1485,8 +1509,8 @@ class Canvas(QLabel):
                     self.finalize_operation()
                 return
 
-        # Start new selection (possibly additive if Ctrl is held)
-        if not (e.modifiers() & Qt.ControlModifier):
+        # Start new selection (possibly additive if Ctrl is held, subtractive if Alt is held)
+        if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
             # Only reset if we are NOT in the middle of drawing a polygon
             if not self.history_pos:
                 self.reset_mode()
@@ -1494,6 +1518,14 @@ class Canvas(QLabel):
             # Force non-moving state so generic_shape_mousePressEvent initializes a new drag
             self.is_moving_shape = False
             
+        if not self.history_pos:
+            if e.modifiers() & Qt.AltModifier:
+                self._selection_operation = "subtract"
+            elif e.modifiers() & Qt.ControlModifier:
+                self._selection_operation = "union"
+            else:
+                self._selection_operation = "replace"
+
         self.active_shape_fn = "drawPolygon"
         self.preview_pen = constants.SELECTION_PEN
         self.selectionActive = True
@@ -1520,7 +1552,7 @@ class Canvas(QLabel):
                 self.finalize_operation()
             return
         
-        if self.locked and not (e.modifiers() & Qt.KeyboardModifier.ControlModifier):
+        if self.locked and not (e.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)) and not self.history_pos:
             return
         self.current_pos = self._to_image_pixel(e)
         self.selectionActive = True
@@ -1545,7 +1577,9 @@ class Canvas(QLabel):
             
             new_path = self._path_from_mask(mask)
             if not new_path.isEmpty():
-                if (e.modifiers() & Qt.KeyboardModifier.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
+                if getattr(self, "_selection_operation", "replace") == "subtract":
+                    self._subtract_selection(new_path)
+                elif getattr(self, "_selection_operation", "replace") == "union" or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
                     self._union_selection(new_path)
                 else:
                     self.painter_path = new_path
@@ -1572,14 +1606,12 @@ class Canvas(QLabel):
         """Delegates to the unified configuration-aware copy helper."""
         return self.copy_selection()
 
-    # Select free (lasso) events — freehand selection via click-and-drag
-
     def selectfree_mousePressEvent(self, e):
         if self.is_moving_shape:
             if e.button() == Qt.MouseButton.LeftButton:
                 pos = self._to_image_pixel(e)
-                # Priority: If holding Ctrl, always start a new selection instead of dragging
-                if e.modifiers() & Qt.ControlModifier:
+                # Priority: If holding Ctrl or Alt, always start a new selection instead of dragging
+                if e.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                     pass
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT — same as selectpoly
@@ -1599,13 +1631,20 @@ class Canvas(QLabel):
                     self.finalize_operation()
                 return
 
-        if e.button() == Qt.MouseButton.LeftButton and (not self.locked or e.modifiers() & Qt.ControlModifier):
+        if e.button() == Qt.MouseButton.LeftButton and (not self.locked or e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
             # Start a new lasso stroke
-            if not (e.modifiers() & Qt.ControlModifier):
+            if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
                 self.reset_mode()
             else:
                 self.is_moving_shape = False
                 
+            if e.modifiers() & Qt.AltModifier:
+                self._selection_operation = "subtract"
+            elif e.modifiers() & Qt.ControlModifier:
+                self._selection_operation = "union"
+            else:
+                self._selection_operation = "replace"
+
             self.active_shape_fn = "drawPath"
             self.preview_pen = constants.SELECTION_PEN
             self.selectionActive = True
@@ -1651,7 +1690,9 @@ class Canvas(QLabel):
             
             new_path = self._path_from_mask(mask)
             if not new_path.isEmpty():
-                if (e.modifiers() & Qt.KeyboardModifier.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
+                if getattr(self, "_selection_operation", "replace") == "subtract":
+                    self._subtract_selection(new_path)
+                elif getattr(self, "_selection_operation", "replace") == "union" or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
                     self._union_selection(new_path)
                 else:
                     self.painter_path = new_path
@@ -1669,11 +1710,11 @@ class Canvas(QLabel):
                 self.status_message_changed.emit("")
                 self.update()
             else:
-                if not (e.modifiers() & Qt.KeyboardModifier.ControlModifier):
+                if getattr(self, "_selection_operation", "replace") == "replace":
                     self.reset_mode()
         else:
-            # Not enough points — cancel only if not additive
-            if not (e.modifiers() & Qt.KeyboardModifier.ControlModifier):
+            # Not enough points — cancel only if not additive/subtractive
+            if getattr(self, "_selection_operation", "replace") == "replace":
                 self.reset_mode()
 
 
@@ -1698,8 +1739,8 @@ class Canvas(QLabel):
         # If we already have a selection move active, handle it
         if self.is_moving_shape:
             if e.button() == Qt.MouseButton.LeftButton:
-                # Priority: If holding Ctrl, always start a new selection instead of dragging
-                if e.modifiers() & Qt.ControlModifier:
+                # Priority: If holding Ctrl or Alt, always start a new selection instead of dragging
+                if e.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                     pass
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
@@ -1724,9 +1765,9 @@ class Canvas(QLabel):
                     self.finalize_operation()
                 return
 
-        # NEW SELECTION (possibly additive if Ctrl is held)
+        # NEW SELECTION (possibly additive if Ctrl is held, subtractive if Alt is held)
         if e.button() == Qt.MouseButton.LeftButton:
-            if not (e.modifiers() & Qt.ControlModifier):
+            if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
                 self.reset_mode()
                 
             image = self._image_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
@@ -1736,7 +1777,9 @@ class Canvas(QLabel):
             if mask:
                 new_path = self._path_from_mask(mask)
                 if not new_path.isEmpty():
-                    if (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
+                    if e.modifiers() & Qt.AltModifier:
+                        self._subtract_selection(new_path)
+                    elif (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
                         self._union_selection(new_path)
                     else:
                         self.painter_path = new_path
@@ -1933,8 +1976,8 @@ class Canvas(QLabel):
             if e.button() == Qt.MouseButton.LeftButton:
                 pos = self._to_image_pixel(e)
                 
-                # Priority: If holding Ctrl, always start a new selection instead of dragging
-                if e.modifiers() & Qt.ControlModifier:
+                # Priority: If holding Ctrl or Alt, always start a new selection instead of dragging
+                if e.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                     pass
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
@@ -1958,8 +2001,8 @@ class Canvas(QLabel):
                     self.finalize_operation()
                 return
 
-        # Start new selection (possibly additive if Ctrl is held)
-        if not (e.modifiers() & Qt.ControlModifier):
+        # Start new selection (possibly additive if Ctrl is held, subtractive if Alt is held)
+        if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
             self.reset_mode()
         else:
             # Force non-moving state so generic_shape_mousePressEvent initializes a new drag
@@ -1985,12 +2028,17 @@ class Canvas(QLabel):
             
             # Guard against tiny accidental clicks
             if rect_f.width() < 1 and rect_f.height() < 1:
-                 # If we were already in selection mode and just clicked, don't reset unless not holding Ctrl
-                 if not (e.modifiers() & Qt.ControlModifier):
+                 # If we were already in selection mode and just clicked, don't reset unless not holding Ctrl or Alt
+                 if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
                       self.reset_mode()
                  return
 
-            if (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
+            if e.modifiers() & Qt.AltModifier:
+                # Subtract from existing selection
+                p = QPainterPath()
+                p.addRect(rect_f)
+                self._subtract_selection(p)
+            elif (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
                 # Add to existing selection
                 p = QPainterPath()
                 p.addRect(rect_f)
@@ -2025,8 +2073,8 @@ class Canvas(QLabel):
             if e.button() == Qt.MouseButton.LeftButton:
                 pos = self._to_image_pixel(e)
                 
-                # Priority: Additive selection
-                if e.modifiers() & Qt.ControlModifier:
+                # Priority: Additive/Subtractive selection
+                if e.modifiers() & (Qt.ControlModifier | Qt.AltModifier):
                     pass
                 elif self._is_selection_hit(pos):
                     # DRAG CONTENT
@@ -2048,8 +2096,8 @@ class Canvas(QLabel):
                     self.finalize_operation()
                 return
 
-        # Start new selection (possibly additive if Ctrl is held)
-        if not (e.modifiers() & Qt.ControlModifier):
+        # Start new selection (possibly additive if Ctrl is held, subtractive if Alt is held)
+        if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
             self.reset_mode()
         else:
             self.is_moving_shape = False
@@ -2070,11 +2118,15 @@ class Canvas(QLabel):
         if self.origin_pos is not None and self.current_pos is not None:
             rect_f = QRectF(self.origin_pos, self.current_pos).normalized()
             if rect_f.width() < 1 and rect_f.height() < 1:
-                 if not (e.modifiers() & Qt.ControlModifier):
+                 if not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)):
                       self.reset_mode()
                  return
 
-            if (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
+            if e.modifiers() & Qt.AltModifier:
+                # Subtract from existing selection
+                p = self._get_pixel_perfect_ellipse_path(rect_f)
+                self._subtract_selection(p)
+            elif (e.modifiers() & Qt.ControlModifier) or (getattr(self, "painter_path", None) and not self.painter_path.isEmpty()):
                 # Add to existing selection
                 p = self._get_pixel_perfect_ellipse_path(rect_f)
                 self._union_selection(p)
@@ -2231,6 +2283,258 @@ class Canvas(QLabel):
         self.last_pos = self.current_pos  # keep animation timer active
         self.timer_event = self.generic_shape_timerEvent
         self.update()
+
+    def flip_selection_horizontal(self):
+        if self.mode == "paste" and getattr(self, "current_stamp", None) is not None:
+            # 1. Flip shape_rotation if non-zero
+            if getattr(self, "shape_rotation", 0) != 0:
+                self.shape_rotation = -self.shape_rotation
+
+            # 2. Transform the stamps
+            self.original_stamp = self.original_stamp.transformed(QTransform().scale(-1, 1))
+            self.current_stamp = self._get_transparent_stamp(self.original_stamp)
+            
+            # 3. Transform the active boundary relative to self.current_pos
+            cx = self.current_pos.x()
+            cy = self.current_pos.y()
+            t = QTransform().translate(cx, cy).scale(-1, 1).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 4. Transform the original boundary relative to self._original_current_pos
+            ocx = getattr(self, "_original_current_pos", self.current_pos).x()
+            ocy = getattr(self, "_original_current_pos", self.current_pos).y()
+            t_orig = QTransform().translate(ocx, ocy).scale(-1, 1).translate(-ocx, -ocy)
+            
+            if getattr(self, "original_painter_path", None) and not self.original_painter_path.isEmpty():
+                self.original_painter_path = t_orig.map(self.original_painter_path)
+            if getattr(self, "_original_history_pos", None):
+                self._original_history_pos = [t_orig.map(QPointF(p)) for p in self._original_history_pos]
+            
+            # Force update of display
+            self.update()
+            
+        elif getattr(self, "selectionActive", False) and getattr(self, "moving_rect", None) is not None:
+            # 1. Flip shape_rotation if non-zero
+            if getattr(self, "shape_rotation", 0) != 0:
+                self.shape_rotation = -self.shape_rotation
+
+            # 2. Capture the selection content
+            pix = self.copy_selection()
+            if pix.isNull():
+                return
+                
+            # 3. Get the center of the moving_rect
+            center = QRectF(self.moving_rect).center()
+            cx = center.x()
+            cy = center.y()
+            
+            # 4. Create a snapshot of the pre-move pixmap
+            pre_move_pixmap = self.pixmap().copy()
+            
+            # 5. Clear the selection area on the base image
+            self._clear_selection_area()
+            
+            # 6. Flip the captured selection pixmap
+            flipped_pix = pix.transformed(QTransform().scale(-1, 1))
+            
+            # 7. Transform the active boundary geometry relative to the center
+            t = QTransform().translate(cx, cy).scale(-1, 1).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 8. Start paste
+            self.start_paste(flipped_pix, initial_pos=center, immediate_drag=False, original_base=pre_move_pixmap)
+
+    def flip_selection_vertical(self):
+        if self.mode == "paste" and getattr(self, "current_stamp", None) is not None:
+            # 1. Flip shape_rotation if non-zero
+            if getattr(self, "shape_rotation", 0) != 0:
+                self.shape_rotation = -self.shape_rotation
+
+            # 2. Transform the stamps
+            self.original_stamp = self.original_stamp.transformed(QTransform().scale(1, -1))
+            self.current_stamp = self._get_transparent_stamp(self.original_stamp)
+            
+            # 3. Transform the active boundary relative to self.current_pos
+            cx = self.current_pos.x()
+            cy = self.current_pos.y()
+            t = QTransform().translate(cx, cy).scale(1, -1).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 4. Transform the original boundary relative to self._original_current_pos
+            ocx = getattr(self, "_original_current_pos", self.current_pos).x()
+            ocy = getattr(self, "_original_current_pos", self.current_pos).y()
+            t_orig = QTransform().translate(ocx, ocy).scale(1, -1).translate(-ocx, -ocy)
+            
+            if getattr(self, "original_painter_path", None) and not self.original_painter_path.isEmpty():
+                self.original_painter_path = t_orig.map(self.original_painter_path)
+            if getattr(self, "_original_history_pos", None):
+                self._original_history_pos = [t_orig.map(QPointF(p)) for p in self._original_history_pos]
+            
+            # Force update of display
+            self.update()
+            
+        elif getattr(self, "selectionActive", False) and getattr(self, "moving_rect", None) is not None:
+            # 1. Flip shape_rotation if non-zero
+            if getattr(self, "shape_rotation", 0) != 0:
+                self.shape_rotation = -self.shape_rotation
+
+            # 2. Capture the selection content
+            pix = self.copy_selection()
+            if pix.isNull():
+                return
+                
+            # 3. Get the center of the moving_rect
+            center = QRectF(self.moving_rect).center()
+            cx = center.x()
+            cy = center.y()
+            
+            # 4. Create a snapshot of the pre-move pixmap
+            pre_move_pixmap = self.pixmap().copy()
+            
+            # 5. Clear the selection area on the base image
+            self._clear_selection_area()
+            
+            # 6. Flip the captured selection pixmap
+            flipped_pix = pix.transformed(QTransform().scale(1, -1))
+            
+            # 7. Transform the active boundary geometry relative to the center
+            t = QTransform().translate(cx, cy).scale(1, -1).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 8. Start paste
+            self.start_paste(flipped_pix, initial_pos=center, immediate_drag=False, original_base=pre_move_pixmap)
+
+    def invert_selection_colors(self):
+        if self.mode == "paste" and getattr(self, "current_stamp", None) is not None:
+            # Transform the stamps
+            img = self.original_stamp.toImage()
+            img.invertPixels()
+            self.original_stamp = QPixmap.fromImage(img)
+            self.current_stamp = self._get_transparent_stamp(self.original_stamp)
+            self.update()
+        elif getattr(self, "selectionActive", False) and getattr(self, "moving_rect", None) is not None:
+            pix = self.copy_selection()
+            if pix.isNull():
+                return
+            center = QRectF(self.moving_rect).center()
+            pre_move_pixmap = self.pixmap().copy()
+            self._clear_selection_area()
+            
+            img = pix.toImage()
+            img.invertPixels()
+            inverted_pix = QPixmap.fromImage(img)
+            
+            self.start_paste(inverted_pix, initial_pos=center, immediate_drag=False, original_base=pre_move_pixmap)
+
+    def rotate_selection_right(self):
+        if self.mode == "paste" and getattr(self, "current_stamp", None) is not None:
+            # 1. Transform the stamps
+            self.original_stamp = self.original_stamp.transformed(QTransform().rotate(90))
+            self.current_stamp = self._get_transparent_stamp(self.original_stamp)
+            
+            # 2. Update moving_rect
+            sw, sh = self.current_stamp.width(), self.current_stamp.height()
+            left = self.current_pos.x() - sw / 2.0
+            top = self.current_pos.y() - sh / 2.0
+            self.moving_rect = QRect(int(left), int(top), sw, sh)
+            
+            # 3. Transform the active boundary relative to self.current_pos
+            cx = self.current_pos.x()
+            cy = self.current_pos.y()
+            t = QTransform().translate(cx, cy).rotate(90).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 4. Transform the original boundary relative to self._original_current_pos
+            ocx = getattr(self, "_original_current_pos", self.current_pos).x()
+            ocy = getattr(self, "_original_current_pos", self.current_pos).y()
+            t_orig = QTransform().translate(ocx, ocy).rotate(90).translate(-ocx, -ocy)
+            
+            if getattr(self, "original_painter_path", None) and not self.original_painter_path.isEmpty():
+                self.original_painter_path = t_orig.map(self.original_painter_path)
+            if getattr(self, "_original_history_pos", None):
+                self._original_history_pos = [t_orig.map(QPointF(p)) for p in self._original_history_pos]
+            if getattr(self, "_original_moving_rect", None):
+                oc = QRectF(self._original_moving_rect).center()
+                osw, osh = self._original_moving_rect.height(), self._original_moving_rect.width()
+                self._original_moving_rect = QRect(int(oc.x() - osw / 2.0), int(oc.y() - osh / 2.0), osw, osh)
+            
+            # Force update of display
+            self.update()
+            
+        elif getattr(self, "selectionActive", False) and getattr(self, "moving_rect", None) is not None:
+            # 1. Capture the selection content
+            pix = self.copy_selection()
+            if pix.isNull():
+                return
+                
+            # 2. Get the center of the moving_rect
+            center = QRectF(self.moving_rect).center()
+            cx = center.x()
+            cy = center.y()
+            
+            # 3. Create a snapshot of the pre-move pixmap
+            pre_move_pixmap = self.pixmap().copy()
+            
+            # 4. Clear the selection area on the base image
+            self._clear_selection_area()
+            
+            # 5. Rotate the captured selection pixmap
+            rotated_pix = pix.transformed(QTransform().rotate(90))
+            
+            # 6. Transform the active boundary geometry relative to the center
+            t = QTransform().translate(cx, cy).rotate(90).translate(-cx, -cy)
+            
+            if getattr(self, "painter_path", None) and not self.painter_path.isEmpty():
+                self.painter_path = t.map(self.painter_path)
+            if getattr(self, "history_pos", None):
+                self.history_pos = [t.map(QPointF(p)) for p in self.history_pos]
+            if getattr(self, "poly_original_points", None):
+                self.poly_original_points = [t.map(QPointF(p)) for p in self.poly_original_points]
+            if getattr(self, "poly_orig_tl", None) and getattr(self, "moving_rect", None):
+                self.poly_orig_tl = self.moving_rect.topLeft()
+                
+            # 7. Start paste
+            self.start_paste(rotated_pix, initial_pos=center, immediate_drag=False, original_base=pre_move_pixmap)
 
     def invert_selection(self):
         """Invert the current selection."""
@@ -3207,8 +3511,11 @@ class Canvas(QLabel):
         text_rect = QRect(tx, ty, br.width(), br.height())
         
         # Consider padding and stroke width
-        pw = self.config.get("size", 1) if self.config.get("contour", True) else 0
-        pad = 6 + (pw / 2.0)
+        if self.config.get("text_no_fill", False):
+            pad = 6
+        else:
+            pw = self.config.get("size", 1) if self.config.get("contour", True) else 0
+            pad = 6 + (pw / 2.0)
         return QRectF(text_rect).adjusted(-pad, -pad, pad, pad)
 
     def text_timerEvent(self, final=False):
@@ -4187,12 +4494,15 @@ class Canvas(QLabel):
         # Add 6px padding for the background rectangle
         # We add half the stroke width to the padding so the 6px gap is measured 
         # from the inner edge of the border.
-        pw = config.get("size", 1) if config.get("contour", True) else 0
-        pad = 6 + (pw / 2.0)
+        if config.get("text_no_fill", False):
+            pad = 6
+        else:
+            pw = config.get("size", 1) if config.get("contour", True) else 0
+            pad = 6 + (pw / 2.0)
         bg_rect = QRectF(text_rect).adjusted(-pad, -pad, pad, pad)
 
-        # Background Rectangle: always drawn for the text tool (solidBack behaviour regardless of config)
-        if text:
+        # Background Rectangle: always drawn for the text tool (solidBack behaviour regardless of config) unless no_fill is true
+        if text and not config.get("text_no_fill", False):
             do_contour = config.get("contour", True)
             do_fill = config.get("fill", True)
             
