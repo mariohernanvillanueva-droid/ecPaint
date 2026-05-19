@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPen
 
-BRUSH_MULT = 3
+BRUSH_MULT = 1
 SPRAY_PAINT_MULT = 0.2
 SPRAY_PAINT_N = 1
 

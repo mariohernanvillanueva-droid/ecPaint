@@ -2928,6 +2928,12 @@ class Canvas(QLabel):
 
         self._record_snapshot()
         self.last_pos = self._to_image_pixel(e)
+        
+        if e.button() == Qt.MouseButton.LeftButton:
+            self.active_color = self.primary_color
+        else:
+            self.active_color = self.secondary_color
+
         self.stroke_points = [self.last_pos]
         self._working_image = self._image_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
         if self.config.get("smooth", False):
