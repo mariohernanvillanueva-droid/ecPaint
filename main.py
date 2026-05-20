@@ -60,7 +60,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setMinimumSize(300, 300)
         
         # Set initial window height
-        self.resize(self.width(), 620)
+        self.resize(900, 700)
 
 
 
@@ -322,12 +322,58 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.textNoFillCheckbox.toggled.connect(lambda checked: self.canvas.set_config("text_no_fill", checked))
         self.textNoFillCheckbox.hide()
 
+        # Add Gradient Type label and combo box below strokesize slider
+        self.gradientLabel = QLabel("Type:")
+        self.gradientLabel.setStyleSheet("font-size: 11px; font-weight: bold; margin-left: 2px; margin-top: 16px; color: #495057;")
+        self.backLayout.insertWidget(self.backLayout.indexOf(self.strokesize) + 1, self.gradientLabel)
+
+        self.gradientCombo = QComboBox()
+        self.gradientCombo.addItems(["Linear", "Radial", "Conical", "Rect"])
+        self.gradientCombo.setCurrentIndex(0)
+        self.gradientCombo.setFixedWidth(66)
+        self.gradientCombo.setStyleSheet("""
+            QComboBox {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 2px 20px 2px 4px;
+                background: white;
+                font-size: 11px;
+                color: #495057;
+            }
+            QComboBox:focus {
+                border-color: #80bdff;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #ffffff;
+                border: 1px solid #ced4da;
+                selection-background-color: #0078d7;
+                selection-color: #ffffff;
+            }
+        """)
+        self.backLayout.insertWidget(self.backLayout.indexOf(self.gradientLabel) + 1, self.gradientCombo)
+
+        def change_gradient_type(text):
+            self.canvas.set_config("gradient_type", text.lower())
+
+        self.gradientCombo.currentTextChanged.connect(change_gradient_type)
+        self.gradientLabel.hide()
+        self.gradientCombo.hide()
+
         # Hide arrowButton as it is no longer needed
         # self.arrowButton.hide()
 
         # Initial state
         self.strokesize.setValue(3) # Default to 16
         update_stroke(3)
+
+        # Setup opacity slider and label
+        def update_opacity(value):
+            self.opacityLabel.setText(f"Opacity: {value}%")
+            self.canvas.set_config("opacity", value)
+
+        self.opacitySlider.valueChanged.connect(update_opacity)
+        self.opacitySlider.setValue(100)
+        update_opacity(100)
 
         # Setup shape mode group (exclusive)
         self.shape_mode_group = QActionGroup(self)
@@ -797,6 +843,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.textNoFillCheckbox.blockSignals(True)
             self.textNoFillCheckbox.setChecked(self.canvas.config.get("text_no_fill", False))
             self.textNoFillCheckbox.blockSignals(False)
+
+        # Show/Hide Gradient widgets
+        is_gradient = mode == "gradient"
+        self.gradientLabel.setVisible(is_gradient)
+        self.gradientCombo.setVisible(is_gradient)
+        if is_gradient:
+            self.canvas.set_config("gradient_type", self.gradientCombo.currentText().lower())
 
         # Show/Hide Regular Poly Toolbar
         if mode == "regularpoly" and self.actionShowToolProperties.isChecked():

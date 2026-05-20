@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/gradient.png</file>
     <file>icons/smudge.png</file>
     <file alias="no-contour1.png">icons/no-contour1.png</file>
     <file alias="contour1.png">icons/contour1.png</file>

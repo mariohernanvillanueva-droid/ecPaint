@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(760, 876)
+        MainWindow.resize(843, 892)
         MainWindow.setStyleSheet(u"QPushButton, QToolButton {\n"
 "\n"
 "    border: 1px solid transparent;\n"
@@ -609,6 +609,18 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.smudgeButton, 7, 0, 1, 1)
 
+        self.gradientButton = QPushButton(self.widget)
+        self.gradientButton.setObjectName(u"gradientButton")
+        self.gradientButton.setMinimumSize(QSize(28, 28))
+        self.gradientButton.setMaximumSize(QSize(28, 28))
+        icon37 = QIcon()
+        icon37.addFile(u":/icons/icons/gradient.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.gradientButton.setIcon(icon37)
+        self.gradientButton.setIconSize(QSize(24, 24))
+        self.gradientButton.setCheckable(True)
+
+        self.gridLayout.addWidget(self.gradientButton, 12, 0, 1, 1)
+
 
         self.verticalLayout_dock.addWidget(self.widget)
 
@@ -664,9 +676,9 @@ class Ui_MainWindow(object):
         self.solidBack.setMinimumSize(QSize(64, 56))
         self.solidBack.setMaximumSize(QSize(64, 56))
         self.solidBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon37 = QIcon()
-        icon37.addFile(u":/icons/solidbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.solidBack.setIcon(icon37)
+        icon38 = QIcon()
+        icon38.addFile(u":/icons/solidbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.solidBack.setIcon(icon38)
         self.solidBack.setIconSize(QSize(44, 32))
         self.solidBack.setCheckable(True)
 
@@ -684,9 +696,9 @@ class Ui_MainWindow(object):
         self.transBack.setMaximumSize(QSize(64, 56))
         self.transBack.setSizeIncrement(QSize(0, 0))
         self.transBack.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon38 = QIcon()
-        icon38.addFile(u":/icons/transbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.transBack.setIcon(icon38)
+        icon39 = QIcon()
+        icon39.addFile(u":/icons/transbk.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.transBack.setIcon(icon39)
         self.transBack.setIconSize(QSize(44, 32))
         self.transBack.setCheckable(True)
         self.transBack.setChecked(True)
@@ -720,9 +732,9 @@ class Ui_MainWindow(object):
         self.contourButton.setMaximumSize(QSize(64, 32))
         self.contourButton.setLayoutDirection(Qt.LeftToRight)
         self.contourButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon39 = QIcon()
-        icon39.addFile(u":/icons/contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.contourButton.setIcon(icon39)
+        icon40 = QIcon()
+        icon40.addFile(u":/icons/contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.contourButton.setIcon(icon40)
         self.contourButton.setIconSize(QSize(64, 16))
         self.contourButton.setCheckable(True)
         self.contourButton.setChecked(True)
@@ -736,9 +748,9 @@ class Ui_MainWindow(object):
         self.fillShapesButton.setMinimumSize(QSize(64, 32))
         self.fillShapesButton.setMaximumSize(QSize(64, 32))
         self.fillShapesButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon40 = QIcon()
-        icon40.addFile(u":/icons/contour-filled1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.fillShapesButton.setIcon(icon40)
+        icon41 = QIcon()
+        icon41.addFile(u":/icons/contour-filled1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.fillShapesButton.setIcon(icon41)
         self.fillShapesButton.setIconSize(QSize(64, 16))
         self.fillShapesButton.setCheckable(True)
 
@@ -751,9 +763,9 @@ class Ui_MainWindow(object):
         self.onlyFillButton.setMinimumSize(QSize(64, 32))
         self.onlyFillButton.setMaximumSize(QSize(64, 32))
         self.onlyFillButton.setStyleSheet(u"border: 0; left: 0; margin: 0; border-radius: 0px;")
-        icon41 = QIcon()
-        icon41.addFile(u":/icons/no-contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.onlyFillButton.setIcon(icon41)
+        icon42 = QIcon()
+        icon42.addFile(u":/icons/no-contour1.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.onlyFillButton.setIcon(icon42)
         self.onlyFillButton.setIconSize(QSize(64, 16))
         self.onlyFillButton.setCheckable(True)
 
@@ -782,7 +794,7 @@ class Ui_MainWindow(object):
         sizePolicy5.setVerticalStretch(0)
         sizePolicy5.setHeightForWidth(self.paletteDock.sizePolicy().hasHeightForWidth())
         self.paletteDock.setSizePolicy(sizePolicy5)
-        self.paletteDock.setMinimumSize(QSize(681, 74))
+        self.paletteDock.setMinimumSize(QSize(784, 74))
         self.paletteDock.setAutoFillBackground(True)
         self.paletteDock.setStyleSheet(u"")
         self.paletteDock.setFeatures(QDockWidget.DockWidgetFloatable|QDockWidget.DockWidgetMovable|QDockWidget.DockWidgetVerticalTitleBar)
@@ -811,18 +823,18 @@ class Ui_MainWindow(object):
         self.switchColors.setObjectName(u"switchColors")
         self.switchColors.setMinimumSize(QSize(18, 18))
         self.switchColors.setMaximumSize(QSize(18, 18))
-        icon42 = QIcon()
-        icon42.addFile(u":/icons/switch.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.switchColors.setIcon(icon42)
+        icon43 = QIcon()
+        icon43.addFile(u":/icons/switch.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.switchColors.setIcon(icon43)
         self.switchColors.setFlat(True)
 
         self.colorGridLayout.addWidget(self.switchColors, 0, 3, 1, 1)
 
         self.bnButton = QPushButton(self.widget_colors_sel)
         self.bnButton.setObjectName(u"bnButton")
-        icon43 = QIcon()
-        icon43.addFile(u":/icons/bn.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.bnButton.setIcon(icon43)
+        icon44 = QIcon()
+        icon44.addFile(u":/icons/bn.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bnButton.setIcon(icon44)
 
         self.colorGridLayout.addWidget(self.bnButton, 2, 0, 1, 1)
 
@@ -1059,11 +1071,39 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_palette.addWidget(self.widget_palette_grid)
 
+        self.widget_opacity = QWidget(self.paletteDockContents)
+        self.widget_opacity.setObjectName(u"widget_opacity")
+        self.widget_opacity.setMinimumSize(QSize(10, 31))
+        self.widget_opacity.setMaximumSize(QSize(120, 48))
+        self.verticalLayout_opacity = QVBoxLayout(self.widget_opacity)
+        self.verticalLayout_opacity.setSpacing(0)
+        self.verticalLayout_opacity.setContentsMargins(11, 11, 11, 11)
+        self.verticalLayout_opacity.setObjectName(u"verticalLayout_opacity")
+        self.verticalLayout_opacity.setContentsMargins(10, 0, 10, 0)
+        self.opacityLabel = QLabel(self.widget_opacity)
+        self.opacityLabel.setObjectName(u"opacityLabel")
+        self.opacityLabel.setStyleSheet(u"font-weight: bold; color: #495057; font-size: 11px;")
+        self.opacityLabel.setAlignment(Qt.AlignCenter)
+
+        self.verticalLayout_opacity.addWidget(self.opacityLabel)
+
+        self.opacitySlider = QSlider(self.widget_opacity)
+        self.opacitySlider.setObjectName(u"opacitySlider")
+        self.opacitySlider.setMinimum(0)
+        self.opacitySlider.setMaximum(100)
+        self.opacitySlider.setValue(100)
+        self.opacitySlider.setOrientation(Qt.Horizontal)
+
+        self.verticalLayout_opacity.addWidget(self.opacitySlider)
+
+
+        self.horizontalLayout_palette.addWidget(self.widget_opacity)
+
         self.paletteDock.setWidget(self.paletteDockContents)
         MainWindow.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.paletteDock)
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 760, 26))
+        self.menuBar.setGeometry(QRect(0, 0, 843, 26))
         self.menuBar.setNativeMenuBar(False)
         self.menuFIle = QMenu(self.menuBar)
         self.menuFIle.setObjectName(u"menuFIle")
@@ -1303,6 +1343,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.sprayButton.setText("")
         self.smudgeButton.setText("")
+        self.gradientButton.setText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Stroke: 12", None))
         self.solidBack.setText("")
         self.transBack.setText("")
@@ -1360,6 +1401,7 @@ class Ui_MainWindow(object):
         self.colorButton_26.setText("")
         self.colorButton_27.setText("")
         self.colorButton_28.setText("")
+        self.opacityLabel.setText(QCoreApplication.translate("MainWindow", u"Opacity: 100%", None))
         self.menuFIle.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuEdit.setTitle(QCoreApplication.translate("MainWindow", u"Edit", None))
         self.menuView.setTitle(QCoreApplication.translate("MainWindow", u"View", None))

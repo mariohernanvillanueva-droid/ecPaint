@@ -78,9 +78,10 @@ MODES = [
     "regularpoly",
     "simpleline",
     "smudge",
+    "gradient",
 ]
 
-CANVAS_DIMENSIONS = 600, 400
+CANVAS_DIMENSIONS = 760, 500
 
 import os
 STAMPS_DIR = os.path.join(os.path.dirname(__file__), "stamps")

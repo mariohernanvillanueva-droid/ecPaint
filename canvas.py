@@ -19,6 +19,9 @@ from PySide6.QtGui import (
     QPolygon,
     QPolygonF,
     QRadialGradient,
+    QLinearGradient,
+    QConicalGradient,
+    QGradient,
     QRegion,
     QTransform,
 )
@@ -68,6 +71,8 @@ class Canvas(QLabel):
         "smudge_radius": 20,
         "smudge_pressure": 50,
         "smooth": False,
+        "opacity": 100,
+        "gradient_type": "linear",
     }
 
     active_color = None
@@ -875,11 +880,15 @@ class Canvas(QLabel):
 
     def set_primary_color(self, hex):
         self.primary_color = QColor(hex)
+        alpha = int(self.config.get("opacity", 100) * 2.55)
+        self.primary_color.setAlpha(alpha)
         self._update_shape_tools()
         self.update()
 
     def set_secondary_color(self, hex):
         self.secondary_color = QColor(hex)
+        alpha = int(self.config.get("opacity", 100) * 2.55)
+        self.secondary_color.setAlpha(alpha)
         self.background_color = QColor(hex)
         self.eraser_color = QColor(hex)
         self.eraser_color.setAlpha(100)
@@ -888,6 +897,12 @@ class Canvas(QLabel):
 
     def set_config(self, key, value):
         self.config[key] = value
+        if key == "opacity":
+            alpha = int(value * 2.55)
+            if self.primary_color:
+                self.primary_color.setAlpha(alpha)
+            if self.secondary_color:
+                self.secondary_color.setAlpha(alpha)
         if key == "paste_fill" and self.mode == "paste" and getattr(self, "original_stamp", None) is not None:
             self.current_stamp = self._get_transparent_stamp(self.original_stamp)
         self._update_shape_tools()
@@ -895,6 +910,12 @@ class Canvas(QLabel):
 
     def set_config_multiple(self, settings):
         self.config.update(settings)
+        if "opacity" in settings:
+            alpha = int(settings["opacity"] * 2.55)
+            if self.primary_color:
+                self.primary_color.setAlpha(alpha)
+            if self.secondary_color:
+                self.secondary_color.setAlpha(alpha)
         if "paste_fill" in settings and self.mode == "paste" and getattr(self, "original_stamp", None) is not None:
             self.current_stamp = self._get_transparent_stamp(self.original_stamp)
         self._update_shape_tools()
@@ -1474,6 +1495,7 @@ class Canvas(QLabel):
         self.last_pos = None
         self.stroke_points = None
         self._working_image = None
+        self._stroke_undo_image = None
 
     # Mode-specific events.
 
@@ -2627,7 +2649,7 @@ class Canvas(QLabel):
                 bbox = bbox.intersected(self._working_image.rect())
                 
                 region_img = self._working_image.copy(bbox)
-                mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                mask_img = region_img.createMaskFromColor(self.primary_color.rgb(), Qt.MaskMode.MaskOutColor)
                 bitmap = QBitmap.fromImage(mask_img)
                 
                 region = QRegion(bitmap)
@@ -2957,6 +2979,11 @@ class Canvas(QLabel):
 
     def pen_mousePressEvent(self, e):
         self.generic_mousePressEvent(e)
+        # When painting with transparency, capture a pre-stroke baseline so the
+        # entire accumulated path can be redrawn each frame without alpha
+        # accumulating at segment-endpoint overlaps.
+        if self.config.get("opacity", 100) < 100 and not getattr(self, "_stroke_undo_image", None):
+            self._stroke_undo_image = self._working_image.copy()
         # Trigger immediate drawing for visual feedback on click
         self.pen_mouseMoveEvent(e)
 
@@ -2966,26 +2993,46 @@ class Canvas(QLabel):
             if curr == self.last_pos and len(self.stroke_points) > 1:
                 return
 
-            # Draw RAW line for immediate, 0-latency feedback
-            p = QPainter(self._working_image)
-            p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
-            p.setPen(
-                QPen(
-                    self.active_color,
-                    self.config["size"],
-                    Qt.PenStyle.SolidLine,
-                    Qt.PenCapStyle.RoundCap,
-                    Qt.PenJoinStyle.RoundJoin,
-                )
+            antialias = self.config.get("antialias", False)
+            pen = QPen(
+                self.active_color,
+                self.config["size"],
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.RoundCap,
+                Qt.PenJoinStyle.RoundJoin,
             )
-            if curr == self.last_pos:
-                p.drawPoint(curr)
-            else:
-                p.drawLine(self.last_pos, curr)
-            p.end()
 
-            self.stroke_points.append(curr)
-            self.last_pos = curr
+            if self.config.get("opacity", 100) < 100 and getattr(self, "_stroke_undo_image", None) is not None:
+                # Semi-transparent stroke: restore the pre-stroke baseline and
+                # redraw the whole accumulated path as one single QPainterPath.
+                # This prevents alpha from doubling at every segment endpoint.
+                self.stroke_points.append(curr)
+                self.last_pos = curr
+                self._working_image = self._stroke_undo_image.copy()
+                p = QPainter(self._working_image)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+                p.setPen(pen)
+                if len(self.stroke_points) == 1:
+                    p.drawPoint(self.stroke_points[0])
+                else:
+                    path = QPainterPath()
+                    path.moveTo(QPointF(self.stroke_points[0]))
+                    for pt in self.stroke_points[1:]:
+                        path.lineTo(QPointF(pt))
+                    p.drawPath(path)
+                p.end()
+            else:
+                # Opaque stroke: incremental segment drawing is fine
+                p = QPainter(self._working_image)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing, antialias)
+                p.setPen(pen)
+                if curr == self.last_pos:
+                    p.drawPoint(curr)
+                else:
+                    p.drawLine(self.last_pos, curr)
+                p.end()
+                self.stroke_points.append(curr)
+                self.last_pos = curr
 
             # Start/Reset the timer to convert this raw stroke to a smooth spline after 1 second of inactivity
             if self.config.get("smooth", False):
@@ -3020,7 +3067,7 @@ class Canvas(QLabel):
             if self.mode == "marker":
                 p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
                 c = QColor(getattr(self, "_marker_color", self.primary_color))
-                c.setAlpha(180)
+                c.setAlpha(int(180 * self.config.get("opacity", 100) / 100.0))
                 size = self.config["size"]
                 color = c
             elif self.mode == "brush":
@@ -3034,7 +3081,7 @@ class Canvas(QLabel):
                     pad = int(size / 2) + 2
                     bbox = QRect(raw_pts[0].x() - pad, raw_pts[0].y() - pad, pad*2, pad*2).intersected(self._working_image.rect())
                     region_img = self._working_image.copy(bbox)
-                    mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                    mask_img = region_img.createMaskFromColor(self.primary_color.rgb(), Qt.MaskMode.MaskOutColor)
                     region = QRegion(QBitmap.fromImage(mask_img))
                     region.translate(bbox.topLeft())
                     p.setClipRegion(region)
@@ -3097,7 +3144,7 @@ class Canvas(QLabel):
         if self.mode == "marker":
             p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
             c = QColor(getattr(self, "_marker_color", self.primary_color))
-            c.setAlpha(180)
+            c.setAlpha(int(180 * self.config.get("opacity", 100) / 100.0))
             size = self.config["size"]
             color = c
         elif self.mode == "brush":
@@ -3116,7 +3163,7 @@ class Canvas(QLabel):
                 bbox = path.boundingRect().toAlignedRect().adjusted(-pad, -pad, pad, pad)
                 bbox = bbox.intersected(self._working_image.rect())
                 region_img = self._working_image.copy(bbox)
-                mask_img = region_img.createMaskFromColor(self.primary_color.rgba(), Qt.MaskMode.MaskOutColor)
+                mask_img = region_img.createMaskFromColor(self.primary_color.rgb(), Qt.MaskMode.MaskOutColor)
                 region = QRegion(QBitmap.fromImage(mask_img))
                 region.translate(bbox.topLeft())
                 p.setClipRegion(region)
@@ -3173,8 +3220,13 @@ class Canvas(QLabel):
             if hasattr(self, "_smooth_timer"):
                 self._smooth_timer.stop()
             self._finalize_smooth_stroke()
+        elif self.config.get("opacity", 100) < 100:
+            # Transparent non-smooth: the last pen_mouseMoveEvent already drew
+            # the final complete path onto _working_image. No additional drawing
+            # is needed (adding a dot here would accumulate alpha again).
+            pass
         else:
-            # Standard non-smooth behavior: draw final dot if needed
+            # Standard non-smooth opaque behavior: draw final dot if needed
             curr = self._to_image_pixel(e)
             if self.last_pos is not None and getattr(self, "_working_image", None) is not None:
                 p = QPainter(self._working_image)
@@ -3200,10 +3252,14 @@ class Canvas(QLabel):
         grad = QRadialGradient(size / 2.0, size / 2.0, size / 2.0)
         color = QColor(self.active_color)
         
+        # Scale the gradient stop alphas by the current opacity so the brush
+        # tip accurately reflects the global transparency setting.
+        alpha_scale = self.active_color.alpha() / 255.0
+        
         # Center has good opacity, fading out to edges
-        grad.setColorAt(0, QColor(color.red(), color.green(), color.blue(), 100))
-        grad.setColorAt(0.3, QColor(color.red(), color.green(), color.blue(), 50))
-        grad.setColorAt(0.7, QColor(color.red(), color.green(), color.blue(), 15))
+        grad.setColorAt(0, QColor(color.red(), color.green(), color.blue(), int(100 * alpha_scale)))
+        grad.setColorAt(0.3, QColor(color.red(), color.green(), color.blue(), int(50 * alpha_scale)))
+        grad.setColorAt(0.7, QColor(color.red(), color.green(), color.blue(), int(15 * alpha_scale)))
         grad.setColorAt(1, QColor(color.red(), color.green(), color.blue(), 0))
         
         p.setBrush(grad)
@@ -3212,7 +3268,7 @@ class Canvas(QLabel):
         
         # Add realistic bristles texture (fine noise)
         rnd = random.Random(42)
-        p.setPen(QColor(color.red(), color.green(), color.blue(), 25))
+        p.setPen(QColor(color.red(), color.green(), color.blue(), int(25 * alpha_scale)))
         for _ in range(int(size * 1.5)):
             r = rnd.uniform(0, size / 2.0)
             theta = rnd.uniform(0, 2 * math.pi)
@@ -3552,6 +3608,135 @@ class Canvas(QLabel):
         self.last_text = self.current_text
         self.last_config = self.config.copy()
 
+    # Gradient events
+
+    def gradient_mousePressEvent(self, e):
+        self._redo_stack.clear()
+        try:
+            self.redo_available.emit(False)
+        except Exception:
+            pass
+
+        self._record_snapshot()
+        self.origin_pos = self._to_image_pixel(e)
+        self.current_pos = self._to_image_pixel(e)
+        self.is_dragging = True
+        
+        # Left-click: Primary -> Secondary; Right-click: Secondary -> Primary
+        start_col = self.primary_color
+        end_col = self.secondary_color if self.secondary_color else QColor(Qt.GlobalColor.white)
+        if e.button() != Qt.MouseButton.LeftButton:
+            start_col, end_col = end_col, start_col
+        self.gradient_start_color = start_col
+        self.gradient_end_color = end_col
+        self.update()
+
+    def gradient_mouseMoveEvent(self, e):
+        if getattr(self, "is_dragging", False):
+            self.current_pos = self._to_image_pixel(e)
+            self.update()
+
+    def _interpolate_color(self, c1, c2, t):
+        t = max(0.0, min(1.0, t))
+        r = int(c1.red() + (c2.red() - c1.red()) * t)
+        g = int(c1.green() + (c2.green() - c1.green()) * t)
+        b = int(c1.blue() + (c2.blue() - c1.blue()) * t)
+        a = int(c1.alpha() + (c2.alpha() - c1.alpha()) * t)
+        return QColor(r, g, b, a)
+
+    def gradient_mouseReleaseEvent(self, e):
+        if getattr(self, "is_dragging", False):
+            self.is_dragging = False
+            self.current_pos = self._to_image_pixel(e)
+            
+            p1 = self.origin_pos
+            p2 = self.current_pos
+            if p1 == p2:
+                p2 = p1 + QPoint(1, 0)
+                
+            image = self.pixmap().toImage()
+            w, h = image.width(), image.height()
+            x, y = p1.x(), p1.y()
+            
+            if 0 <= x < w and 0 <= y < h:
+                # 1. Flood-fill contiguous region matching start color
+                target_color = image.pixel(x, y)
+                have_seen = {(x, y)}
+                queue = [(x, y)]
+                filled_coords = []
+                
+                while queue:
+                    cx, cy = queue.pop()
+                    if image.pixel(cx, cy) == target_color:
+                        filled_coords.append((cx, cy))
+                        for dx, dy in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
+                            nx, ny = cx + dx, cy + dy
+                            if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in have_seen:
+                                have_seen.add((nx, ny))
+                                queue.append((nx, ny))
+                
+                # 2. Render gradient
+                gradient_type = self.config.get("gradient_type", "linear")
+                
+                if gradient_type == "rect":
+                    rx = abs(p2.x() - p1.x())
+                    ry = abs(p2.y() - p1.y())
+                    if rx < 1: rx = 1
+                    if ry < 1: ry = 1
+                    for cx, cy in filled_coords:
+                        dx = abs(cx - p1.x())
+                        dy = abs(cy - p1.y())
+                        tx = dx / rx
+                        ty = dy / ry
+                        t = max(tx, ty)
+                        color = self._interpolate_color(self.gradient_start_color, self.gradient_end_color, t)
+                        image.setPixel(cx, cy, color.rgba())
+                else:
+                    # Use standard QGradient painted onto temp_img
+                    temp_img = QImage(w, h, QImage.Format.Format_ARGB32)
+                    temp_img.fill(Qt.GlobalColor.transparent)
+                    
+                    painter = QPainter(temp_img)
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                    
+                    if gradient_type == "radial":
+                        dx = p2.x() - p1.x()
+                        dy = p2.y() - p1.y()
+                        radius = math.hypot(dx, dy)
+                        if radius < 1.0:
+                            radius = 1.0
+                        grad = QRadialGradient(QPointF(p1), radius)
+                        grad.setColorAt(0.0, self.gradient_start_color)
+                        grad.setColorAt(1.0, self.gradient_end_color)
+                        grad.setSpread(QGradient.Spread.PadSpread)
+                    elif gradient_type == "conical":
+                        dx = p2.x() - p1.x()
+                        dy = p2.y() - p1.y()
+                        angle_deg = -math.degrees(math.atan2(dy, dx))
+                        if angle_deg < 0:
+                            angle_deg += 360.0
+                        grad = QConicalGradient(QPointF(p1), angle_deg)
+                        grad.setColorAt(0.0, self.gradient_start_color)
+                        grad.setColorAt(1.0, self.gradient_end_color)
+                    else: # linear
+                        grad = QLinearGradient(QPointF(p1), QPointF(p2))
+                        grad.setColorAt(0.0, self.gradient_start_color)
+                        grad.setColorAt(1.0, self.gradient_end_color)
+                        
+                    brush = QBrush(grad)
+                    painter.fillRect(0, 0, w, h, brush)
+                    painter.end()
+                    
+                    for cx, cy in filled_coords:
+                        image.setPixel(cx, cy, temp_img.pixel(cx, cy))
+                
+                # Commit to canvas
+                self.setPixmap(QPixmap.fromImage(image), record=False)
+            
+            self.origin_pos = None
+            self.current_pos = None
+            self.update()
+
     # Fill events
 
     def fill_mousePressEvent(self, e):
@@ -3684,7 +3869,7 @@ class Canvas(QLabel):
             p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
             
             c = QColor(getattr(self, "_marker_color", self.primary_color))
-            c.setAlpha(180)
+            c.setAlpha(int(180 * self.config.get("opacity", 100) / 100.0))
             p.setPen(
                 QPen(
                     c,
@@ -3715,7 +3900,7 @@ class Canvas(QLabel):
              p.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
              p.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
              c = QColor(getattr(self, "_marker_color", self.primary_color))
-             c.setAlpha(180)
+             c.setAlpha(int(180 * self.config.get("opacity", 100) / 100.0))
              p.setPen(QPen(c, self.config["size"], Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
              if len(self.stroke_points) == 1:
                  p.drawPoint(self.stroke_points[0])
@@ -4799,10 +4984,11 @@ class Canvas(QLabel):
             sp.setRenderHint(QPainter.RenderHint.Antialiasing, self.mode == "marker")
             
             color = QColor(self.primary_color)
+            opacity_scale = self.config.get("opacity", 100) / 100.0
             if self.mode == "marker":
-                color.setAlpha(180)
+                color.setAlpha(int(180 * opacity_scale))
             else:
-                color.setAlpha(127)
+                color.setAlpha(int(127 * opacity_scale))
 
             sp.setPen(
                 QPen(
@@ -5028,6 +5214,45 @@ class Canvas(QLabel):
             painter.restore()
         
         # Brush/Pen/Marker cursor preview (Removed from zoomed painter to use low-res overlay for pixelation)
+
+        # Draw Gradient Guidelines Preview
+        if self.mode == "gradient" and getattr(self, "is_dragging", False) and getattr(self, "origin_pos", None) and getattr(self, "current_pos", None):
+            painter.save()
+            painter.scale(s, s)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setCompositionMode(QPainter.CompositionMode.RasterOp_SourceXorDestination)
+            
+            pen = QPen(Qt.GlobalColor.white, 1, Qt.PenStyle.DashLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            
+            p1 = QPointF(self.origin_pos)
+            p2 = QPointF(self.current_pos)
+            
+            gradient_type = self.config.get("gradient_type", "linear")
+            
+            # Draw vector direction line
+            painter.drawLine(p1, p2)
+            
+            # Draw handle squares at end points
+            handle_size = 6
+            half = handle_size / 2.0
+            painter.drawRect(QRectF(p1.x() - half, p1.y() - half, handle_size, handle_size))
+            painter.drawRect(QRectF(p2.x() - half, p2.y() - half, handle_size, handle_size))
+            
+            # Draw bounding shapes based on gradient type
+            if gradient_type in ["radial", "conical"]:
+                dx = p2.x() - p1.x()
+                dy = p2.y() - p1.y()
+                radius = math.hypot(dx, dy)
+                if radius > 0:
+                    painter.drawEllipse(p1, radius, radius)
+            elif gradient_type == "rect":
+                rx = abs(p2.x() - p1.x())
+                ry = abs(p2.y() - p1.y())
+                painter.drawRect(QRectF(p1.x() - rx, p1.y() - ry, rx * 2, ry * 2))
+                
+            painter.restore()
 
         # then draw anchors overlay in widget coordinates
         rects = self._anchor_rects_display()
@@ -5582,57 +5807,116 @@ class Canvas(QLabel):
                 self._draw_symmetrical_pixel_line(painter, p1, p2, color, size)
             return
 
-        painter.save()
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
-        
-        # Draw the main line
-        if is_preview:
-            # For preview, the pen is already set (dashed white)
-            painter.drawLine(p1, p2)
-            pen = painter.pen()
-        else:
-            pen = QPen(color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
-            painter.setPen(pen)
-            painter.drawLine(p1, p2)
+        # If completely opaque or is a simple dashed preview, draw directly to avoid overhead
+        if color.alpha() == 255 or is_preview:
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
+            
+            # Draw the main line
+            if is_preview:
+                painter.drawLine(p1, p2)
+            else:
+                pen = QPen(color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+                painter.setPen(pen)
+                painter.drawLine(p1, p2)
 
-        # Draw the arrow head at p2
+            # Draw the arrow head at p2
+            angle = math.atan2(p2.y() - p1.y(), p2.x() - p1.x())
+            head_length = max(15, size * 3)
+            p2_f = QPointF(p2)
+            
+            if line_type == 1:
+                wing_angle = math.pi / 6
+                p_wing1 = p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
+                                         math.sin(angle - wing_angle) * head_length)
+                p_wing2 = p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
+                                         math.sin(angle + wing_angle) * head_length)
+                painter.drawLine(p2_f, p_wing1)
+                painter.drawLine(p2_f, p_wing2)
+            elif line_type == 2:
+                wing_angle = math.pi / 6
+                p_wing1 = p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
+                                         math.sin(angle - wing_angle) * head_length)
+                p_wing2 = p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
+                                         math.sin(angle + wing_angle) * head_length)
+                poly = QPolygonF([p2_f, p_wing1, p_wing2])
+                if is_preview:
+                    painter.drawPolygon(poly)
+                else:
+                    painter.setBrush(QBrush(color))
+                    painter.drawPolygon(poly)
+                    
+            painter.restore()
+            return
+
+        # Semi-transparent arrow line: draw opaque primitives to a temporary transparent QImage
+        # then blend onto target painter at once to prevent alpha accumulation at overlaps.
+        x1, y1 = p1.x(), p1.y()
+        x2, y2 = p2.x(), p2.y()
+        min_x = min(x1, x2)
+        min_y = min(y1, y2)
+        max_x = max(x1, x2)
+        max_y = max(y1, y2)
+        
+        head_length = max(15, size * 3)
+        pad = int(head_length + size * 2 + 10)
+        
+        canvas_w = self._image_pixmap.width() if self._image_pixmap else 2000
+        canvas_h = self._image_pixmap.height() if self._image_pixmap else 2000
+        
+        rect = QRect(min_x - pad, min_y - pad, (max_x - min_x) + pad * 2, (max_y - min_y) + pad * 2)
+        rect = rect.intersected(QRect(0, 0, canvas_w, canvas_h))
+        if rect.isEmpty():
+            return
+            
+        temp_image = QImage(rect.size(), QImage.Format.Format_ARGB32)
+        temp_image.fill(Qt.GlobalColor.transparent)
+        
+        temp_painter = QPainter(temp_image)
+        temp_painter.setRenderHint(QPainter.RenderHint.Antialiasing, self.config.get("antialias", False))
+        
+        offset = QPointF(rect.topLeft())
+        local_p1 = QPointF(p1) - offset
+        local_p2 = QPointF(p2) - offset
+        local_p2_f = QPointF(local_p2)
+        
+        # Use an opaque version of the color inside the buffer
+        opaque_color = QColor(color.red(), color.green(), color.blue(), 255)
+        
+        # 1. Draw line on temporary buffer
+        pen = QPen(opaque_color, size, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+        temp_painter.setPen(pen)
+        temp_painter.drawLine(local_p1, local_p2)
+        
+        # 2. Draw arrow head on temporary buffer
         angle = math.atan2(p2.y() - p1.y(), p2.x() - p1.x())
         
-        # Calculate head size based on stroke width
-        head_length = max(15, size * 3)
-        head_width = head_length * 0.6
-        
-        # Points for the head
-        p2_f = QPointF(p2)
-        
-        # Type 1: Simple Wings (→)
         if line_type == 1:
-            # We want the wings to be separate lines
-            wing_angle = math.pi / 6 # 30 degrees
-            p_wing1 = p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
-                                     math.sin(angle - wing_angle) * head_length)
-            p_wing2 = p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
-                                     math.sin(angle + wing_angle) * head_length)
-            
-            painter.drawLine(p2_f, p_wing1)
-            painter.drawLine(p2_f, p_wing2)
-            
-        # Type 2: Triangle Head (⭢)
+            wing_angle = math.pi / 6
+            p_wing1 = local_p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
+                                           math.sin(angle - wing_angle) * head_length)
+            p_wing2 = local_p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
+                                           math.sin(angle + wing_angle) * head_length)
+            temp_painter.drawLine(local_p2_f, p_wing1)
+            temp_painter.drawLine(local_p2_f, p_wing2)
         elif line_type == 2:
             wing_angle = math.pi / 6
-            p_wing1 = p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
-                                     math.sin(angle - wing_angle) * head_length)
-            p_wing2 = p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
-                                     math.sin(angle + wing_angle) * head_length)
+            p_wing1 = local_p2_f - QPointF(math.cos(angle - wing_angle) * head_length, 
+                                           math.sin(angle - wing_angle) * head_length)
+            p_wing2 = local_p2_f - QPointF(math.cos(angle + wing_angle) * head_length, 
+                                           math.sin(angle + wing_angle) * head_length)
+            poly = QPolygonF([local_p2_f, p_wing1, p_wing2])
+            temp_painter.setBrush(QBrush(opaque_color))
+            temp_painter.drawPolygon(poly)
             
-            poly = QPolygonF([p2_f, p_wing1, p_wing2])
-            
-            if is_preview:
-                # In preview, we just draw the outline
-                painter.drawPolygon(poly)
-            else:
-                painter.setBrush(QBrush(color))
-                painter.drawPolygon(poly)
+        temp_painter.end()
+        
+        # 3. Draw the temporary buffer onto the original painter using the correct opacity
+        painter.save()
+        prev_opacity = painter.opacity()
+        painter.setOpacity(prev_opacity * (color.alpha() / 255.0))
+        painter.drawImage(rect.topLeft(), temp_image)
+        painter.restore()
                 
         painter.restore()
 
