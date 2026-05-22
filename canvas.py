@@ -2886,25 +2886,37 @@ class Canvas(QLabel):
             return
 
         if final:
-            cp = self.current_pos if self.current_pos is not None else QPointF(
-                self._image_pixmap.width() / 2.0, self._image_pixmap.height() / 2.0
-            )
-            top_left = QPointF(round(cp.x() - self.current_stamp.width() / 2.0), round(cp.y() - self.current_stamp.height() / 2.0))
+            # Use moving_rect for positioning, matching the preview rendering
+            mr = getattr(self, "moving_rect", None)
+            if mr:
+                # Position based on moving_rect (top-left), same as preview
+                center_x = mr.x() + mr.width() / 2.0
+                center_y = mr.y() + mr.height() / 2.0
+                top_left = QPointF(mr.x(), mr.y())
+            else:
+                # Fallback to current_pos if moving_rect not available
+                cp = self.current_pos if self.current_pos is not None else QPointF(
+                    self._image_pixmap.width() / 2.0, self._image_pixmap.height() / 2.0
+                )
+                center_x = cp.x()
+                center_y = cp.y()
+                top_left = QPointF(round(cp.x() - self.current_stamp.width() / 2.0), round(cp.y() - self.current_stamp.height() / 2.0))
+            
             base = self.paste_base
             p = QPainter(base)
             
             rotation = getattr(self, "shape_rotation", 0)
             if rotation != 0:
-                cp_rounded = QPointF(round(cp.x()), round(cp.y()))
-                p.translate(cp_rounded.x(), cp_rounded.y())
+                p.translate(center_x, center_y)
                 p.rotate(rotation)
-                p.translate(-cp_rounded.x(), -cp_rounded.y())
+                p.translate(-center_x, -center_y)
                 
             p.drawPixmap(top_left, self.current_stamp)
             p.end()
             self.setPixmap(base)
-            # update final position to be rounded
-            self.current_pos = QPointF(round(cp.x()), round(cp.y()))
+            # update final position to match moving_rect
+            if mr:
+                self.current_pos = QPointF(center_x, center_y)
             # clear paste state and restore prior mode
             self.paste_base = None
             self.current_stamp = None
@@ -2927,12 +2939,13 @@ class Canvas(QLabel):
                     if abs(diff_press.x()) > 2 or abs(diff_press.y()) > 2:
                         self._dragged_during_session = True
             
-            # Calculate integer snapped delta from original press position
+            # Calculate delta from original press position (with full sub-pixel precision)
             press_pos = getattr(self, "_press_pos", None)
             if press_pos is not None:
                 diff = pos_f - press_pos
                 diff_rounded = QPointF(round(diff.x()), round(diff.y()))
             else:
+                diff = QPointF(0, 0)
                 diff_rounded = QPointF(0, 0)
 
             # Round current_pos to integer coordinates, but offset it by the integer snapped diff
@@ -2942,19 +2955,19 @@ class Canvas(QLabel):
             # Synchronize selection boundary ("ants") and hit-test box with the moved content
             if getattr(self, "_original_history_pos", None):
                 self.history_pos = [QPointF(round(p.x() + diff_rounded.x()), round(p.y() + diff_rounded.y())) for p in self._original_history_pos]
+            if getattr(self, "original_painter_path", None):
+                # Selection path moves in whole pixel steps for correct hit-testing
+                self.painter_path = self.original_painter_path.translated(diff_rounded.x(), diff_rounded.y())
             if getattr(self, "_original_moving_rect", None):
                 orig_rect = self._original_moving_rect
-                exact_x = orig_rect.x() + diff_rounded.x()
-                exact_y = orig_rect.y() + diff_rounded.y()
+                # Update moving_rect using the same diff_rounded as painter_path to stay in sync
                 self.moving_rect = QRect(
-                    round(exact_x),
-                    round(exact_y),
+                    int(orig_rect.x() + diff_rounded.x()),
+                    int(orig_rect.y() + diff_rounded.y()),
                     int(orig_rect.width()),
                     int(orig_rect.height())
                 )
-                self._display_moving_rectF = QRectF(self.moving_rect)
-            if getattr(self, "original_painter_path", None):
-                self.painter_path = self.original_painter_path.translated(diff_rounded.x(), diff_rounded.y())
+                # Don't set _display_moving_rectF in paste mode - keep rendering integer-snapped for consistency
             
             if self.moving_rect:
                 self.selection_dimensions_changed.emit(self.moving_rect.width(), self.moving_rect.height())
@@ -4024,18 +4037,21 @@ class Canvas(QLabel):
                     diff_rounded = QPointF(round(diff.x()), round(diff.y()))
                     if getattr(self, "_original_moving_rect", None) is not None:
                         orig = self._original_moving_rect
-                        exact_x = orig.x() + diff_rounded.x()
-                        exact_y = orig.y() + diff_rounded.y()
+                        # Store full-precision float position for sub-pixel-smooth rendering
+                        exact_x = orig.x() + diff.x()
+                        exact_y = orig.y() + diff.y()
                         self.moving_rect = QRect(
                             round(exact_x),
                             round(exact_y),
                             int(orig.width()),
                             int(orig.height())
                         )
-                        self._display_moving_rectF = QRectF(self.moving_rect)
+                        # Store display rect with full fractional precision for smooth rendering during drag
+                        self._display_moving_rectF = QRectF(exact_x, exact_y, orig.width(), orig.height())
                     if getattr(self, "_original_history_pos", None) is not None:
                         self.history_pos = [QPointF(round(p.x() + diff_rounded.x()), round(p.y() + diff_rounded.y())) for p in self._original_history_pos]
                     if getattr(self, "_original_painter_path", None) is not None:
+                        # Selection path moves in whole pixel steps for correct hit-testing
                         self.painter_path = self._original_painter_path.translated(diff_rounded.x(), diff_rounded.y())
                     if getattr(self, "_original_ants_path", None) is not None:
                         self.ants_path = self._original_ants_path.translated(diff_rounded.x(), diff_rounded.y())
@@ -4308,20 +4324,23 @@ class Canvas(QLabel):
                     diff_rounded = QPointF(round(diff.x()), round(diff.y()))
                     if getattr(self, "_original_moving_rect", None) is not None:
                         orig = self._original_moving_rect
-                        exact_x = orig.x() + diff_rounded.x()
-                        exact_y = orig.y() + diff_rounded.y()
+                        # Store full-precision float position for sub-pixel-smooth rendering
+                        exact_x = orig.x() + diff.x()
+                        exact_y = orig.y() + diff.y()
                         self.moving_rect = QRect(
                             round(exact_x),
                             round(exact_y),
                             int(orig.width()),
                             int(orig.height())
                         )
-                        self._display_moving_rectF = QRectF(self.moving_rect)
+                        # Store display rect with full fractional precision for smooth rendering during drag
+                        self._display_moving_rectF = QRectF(exact_x, exact_y, orig.width(), orig.height())
                     if getattr(self, "_original_history_pos", None) is not None:
                         self.history_pos = [QPointF(round(p.x() + diff_rounded.x()), round(p.y() + diff_rounded.y())) for p in self._original_history_pos]
                         if getattr(self, "poly_original_points", None) is not None:
                             self.poly_original_points = list(self.history_pos)
                     if getattr(self, "_original_painter_path", None) is not None:
+                        # Selection path moves in whole pixel steps for correct hit-testing
                         self.painter_path = self._original_painter_path.translated(diff_rounded.x(), diff_rounded.y())
                         if getattr(self, "original_painter_path", None) is not None:
                             self.original_painter_path = QPainterPath(self.painter_path)
@@ -5262,14 +5281,26 @@ class Canvas(QLabel):
             painter.scale(s, s)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-            cp = self.current_pos
-            top_left = QPointF(cp.x() - self.current_stamp.width() / 2.0, cp.y() - self.current_stamp.height() / 2.0)
+            
+            # Use moving_rect to position content, ensuring perfect sync with marching ants
+            mr = getattr(self, "moving_rect", None)
+            if mr:
+                # Calculate center from moving_rect to match the marching ants position exactly
+                center_x = mr.x() + mr.width() / 2.0
+                center_y = mr.y() + mr.height() / 2.0
+                top_left = QPointF(center_x - self.current_stamp.width() / 2.0, center_y - self.current_stamp.height() / 2.0)
+            else:
+                # Fallback to current_pos if moving_rect not available
+                cp = self.current_pos
+                top_left = QPointF(cp.x() - self.current_stamp.width() / 2.0, cp.y() - self.current_stamp.height() / 2.0)
             
             rotation = getattr(self, "shape_rotation", 0)
             if rotation != 0:
-                painter.translate(cp.x(), cp.y())
+                center_x = mr.x() + mr.width() / 2.0 if mr else cp.x()
+                center_y = mr.y() + mr.height() / 2.0 if mr else cp.y()
+                painter.translate(center_x, center_y)
                 painter.rotate(rotation)
-                painter.translate(-cp.x(), -cp.y())
+                painter.translate(-center_x, -center_y)
                 
             painter.drawPixmap(top_left, self.current_stamp)
             
