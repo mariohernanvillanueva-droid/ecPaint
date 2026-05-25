@@ -1200,12 +1200,12 @@ class Canvas(QLabel):
             if is_movable:
                 hit_movable = self._is_selection_hit(self._to_image_pixel(e))
             
-            if hit_movable or getattr(self, "is_dragging_shape", False) or getattr(self, "is_dragging", False):
+            if self.mode == "magnifier":
+                self.setCursor(self.zoom_cursor)
+            elif hit_movable or getattr(self, "is_dragging_shape", False) or getattr(self, "is_dragging", False):
                 self.setCursor(Qt.SizeAllCursor)
             # elif self.mode in ["brush", "pen", "marker"]:
             #    self.setCursor(Qt.CursorShape.CrossCursor)
-            elif self.mode == "magnifier":
-                self.setCursor(self.zoom_cursor)
             elif self.mode == "move":
                 self.unsetCursor()
             else:
@@ -1597,7 +1597,7 @@ class Canvas(QLabel):
             p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
             p.setBrush(QBrush(Qt.GlobalColor.black))
             p.setPen(QPen(Qt.GlobalColor.black))
-            p.drawPolygon(QPolygon(self.history_pos))
+            p.drawPolygon(QPolygonF([QPointF(pt) for pt in self.history_pos]))
             p.end()
             
             new_path = self._path_from_mask(mask)
@@ -1710,7 +1710,7 @@ class Canvas(QLabel):
             p.setRenderHint(QPainter.RenderHint.Antialiasing, False)
             p.setBrush(QBrush(Qt.GlobalColor.black)) # foreground
             p.setPen(QPen(Qt.GlobalColor.black))
-            p.drawPolygon(QPolygon(self.history_pos))
+            p.drawPolygon(QPolygonF([QPointF(pt) for pt in self.history_pos]))
             p.end()
             
             new_path = self._path_from_mask(mask)
@@ -2156,8 +2156,8 @@ class Canvas(QLabel):
                 p = self._get_pixel_perfect_ellipse_path(rect_f)
                 self._union_selection(p)
             else:
-                self.moving_rect = rect_f.toRect()
                 self.painter_path = self._get_pixel_perfect_ellipse_path(rect_f)
+                self.moving_rect = self.painter_path.boundingRect().toRect()
                 self.active_shape_fn = "drawEllipse"
                 
             self.preview_pen = constants.SELECTION_PEN
@@ -2175,10 +2175,9 @@ class Canvas(QLabel):
 
     def selectellipse_copy(self):
         self.timer_cleanup()
-        rect = self.moving_rect if self.moving_rect else QRect(self.origin_pos, self.current_pos).normalized()
-        
-        # Ensure we have the latest pixel-perfect path
-        self.painter_path = self._get_pixel_perfect_ellipse_path(QRectF(rect))
+        if not getattr(self, "painter_path", None) or self.painter_path.isEmpty():
+            rect = self.moving_rect if self.moving_rect else QRect(self.origin_pos, self.current_pos).normalized()
+            self.painter_path = self._get_pixel_perfect_ellipse_path(QRectF(rect))
         
         return self.selectwand_copy()
 
@@ -4991,7 +4990,7 @@ class Canvas(QLabel):
                 if self.active_shape_fn in ["drawPolygon", "drawPolyline"]:
                     pts = (self.history_pos or []) if is_moving else ((self.history_pos or []) + [self.current_pos])
                     if pts:
-                        poly = QPolygon(pts)
+                        poly = QPolygonF([QPointF(pt) for pt in pts])
                         getattr(overlay_painter, self.active_shape_fn)(poly)
                 elif self.active_shape_fn == "drawSpline" and (self.history_pos or not is_moving):
                     # Use history_pos; include current cursor only when in initial drawing phase
@@ -5228,7 +5227,7 @@ class Canvas(QLabel):
                     else:
                         box_pen = QPen(Qt.GlobalColor.white, 1, Qt.PenStyle.DashLine)
                     painter.setPen(box_pen)
-                    painter.drawRect(bbox)
+                    # painter.drawRect(bbox)
                 
                 painter.restore()
 
@@ -5522,7 +5521,7 @@ class Canvas(QLabel):
         else:
             # Regular shape tool logic: keep history_pos for solid rendering
             self.poly_original_points = list(self.history_pos)
-            self.moving_rect = QRectF(QPolygon(self.history_pos).boundingRect())
+            self.moving_rect = QPolygonF([QPointF(pt) for pt in self.history_pos]).boundingRect()
             self.poly_orig_tl = self.moving_rect.topLeft()
             self.is_moving_shape = True
             self.status_message_changed.emit("Drag to move the shape, and press Double-click to accept or Right-click to cancel")
